@@ -8,6 +8,6 @@
 - Exact JSON settings persistence, bounded logs and per-mod metrics.
 - Native project generator, package receipts, dry runs, modified-file preservation and exception rollback.
 - Settings migration, PE/address identity doctor and Windows-library probe.
-- Regression coverage for the five independent review findings.
+- Regression coverage for ABI validation, exact settings preservation, runtime identities, startup ordering and package schema checks.
 
 Game bootstrap and engine services remain unavailable. This is a development foundation, not a six-framework replacement release.

@@ -16,7 +16,7 @@ Use a Windows SDK and the MSVC C/C++ workload. Python 3.10+ is used for integrat
 .\build.ps1 -Python "C:/path/to/python.exe"
 ```
 
-The local managed sandbox denied MSBuild's registry discovery, and the Python launcher also could not discover its installation there. Explicit toolchain/Python paths worked. A Windows hardlink fixture requires normal filesystem permissions; its permitted local test was restricted to the build directory.
+If tool discovery is restricted, pass the Python executable explicitly and run MSBuild with the permissions needed to read the installed toolchain metadata. Filesystem link fixtures require ordinary Windows link permissions and are confined to temporary test directories.
 
 ## Tests and proof boundaries
 
@@ -26,7 +26,7 @@ These tests establish standalone behavior only. They do not establish engine ref
 
 ## Review changes
 
-An independent native/plugin/package review identified five important issues: API truncation, JSON numeric/size preservation, allocation-address runtime identity reuse, interleaved query/start, and incomplete installer schema validation. Each received a regression observed failing before its fix. No minor findings were deferred. The execution ledger and exact artifact verification are supplied with the local deliverable, not uploaded as personal game inventories.
+Runtime and package regression tests cover API truncation, JSON numeric/size preservation, allocation-address runtime identity reuse, query/start ordering and installer schema validation. These cases were observed failing before the corresponding fixes and passing afterward.
 
 ## Dependency policy
 
