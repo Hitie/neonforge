@@ -6,7 +6,7 @@
 
 **Architecture:** Retain the independent runtime and new API. Compare each service with the incumbent that provides that service, and compare complete representative mod workloads with the combined dependency stack. Do not compare a no-op standalone dispatcher with an in-game engine operation.
 
-**Scope:** The six supplied frameworks and the existing 95-group capability roadmap. A broader claim about every existing or future framework is not established by these comparisons. The current user instruction is development outside the game; live qualification requires a later isolated test setup and does not authorize changing CPVC's setup.
+**Scope:** The six supplied frameworks and the existing 95-group capability roadmap. A broader claim about every existing or future framework is not established by these comparisons. The current user instruction is development outside the game; live qualification requires a later isolated test setup and does not authorize changing existing installations.
 
 ## Current gap assessment
 
@@ -50,8 +50,8 @@ These are development targets, not present results. A weighted total cannot conc
 
 ## Comparison protocol
 
-- Select maintained, stable public releases compatible with the exact game executable; record source URLs, release identifiers, package hashes and dependency versions. Test the locally modified CPVC framework stack separately, rather than treating it as the public incumbent baseline.
-- Preserve CPVC and its settings. Run future comparisons on an isolated setup with a disposable save and original benchmark/sample mods.
+- Select maintained, stable public releases compatible with the exact game executable; record source URLs, release identifiers, package hashes and dependency versions. Test locally modified framework stacks separately, rather than treating it as the public incumbent baseline.
+- Preserve existing installations and settings. Run future comparisons on an isolated setup with a disposable save and original benchmark/sample mods.
 - Declare workloads, input sizes, expected outputs, warmup rules, cache states and meaningful-regression tolerances before collecting results. Cover tiny, typical, heavy and mutation/failure cases. Publish failed and slower cases alongside wins.
 - Use the same machine, executable, graphics settings, save/scene and mod payload. Compare cold and warm behavior separately. Alternate candidate/baseline order and collect at least 30 measured samples per scenario; retain raw samples and uncertainty estimates. Record background load and CPU-clock limitations.
 - Measure total work and tail latency, not only callback bodies. Count actual engine operations, allocations and retained resources. A skipped, rejected or unavailable operation is not a speed win.
