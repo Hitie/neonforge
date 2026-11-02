@@ -1,0 +1,215 @@
+{
+  "cases": [
+    {
+      "cleanup_verified": true,
+      "matching_listeners": 0,
+      "median_ns_per_operation": 66.78,
+      "min_ns_per_operation": 63.74,
+      "name": "event.empty",
+      "operation": "event_emit",
+      "operations_per_sample": 5000,
+      "p95_ns_per_operation": 133.04,
+      "samples_ns_per_operation": [
+        93.76,
+        66.78,
+        63.74,
+        64.26,
+        64.04,
+        125.26,
+        133.04
+      ],
+      "unrelated_listeners": 0,
+      "verified_callbacks_per_sample": 0
+    },
+    {
+      "cleanup_verified": true,
+      "matching_listeners": 1,
+      "median_ns_per_operation": 227.48,
+      "min_ns_per_operation": 157.32,
+      "name": "event.one",
+      "operation": "event_emit",
+      "operations_per_sample": 5000,
+      "p95_ns_per_operation": 328.68,
+      "samples_ns_per_operation": [
+        328.68,
+        325.8,
+        227.48,
+        188.26,
+        245.88,
+        162.16,
+        157.32
+      ],
+      "unrelated_listeners": 0,
+      "verified_callbacks_per_sample": 5000
+    },
+    {
+      "cleanup_verified": true,
+      "matching_listeners": 1,
+      "median_ns_per_operation": 5911.8,
+      "min_ns_per_operation": 5533.58,
+      "name": "event.one.unrelated1024",
+      "operation": "event_emit",
+      "operations_per_sample": 5000,
+      "p95_ns_per_operation": 6961.66,
+      "samples_ns_per_operation": [
+        5911.8,
+        5533.58,
+        5803.22,
+        6961.66,
+        6536.54,
+        6005.46,
+        5856.84
+      ],
+      "unrelated_listeners": 1024,
+      "verified_callbacks_per_sample": 5000
+    },
+    {
+      "cleanup_verified": true,
+      "matching_listeners": 1,
+      "median_ns_per_operation": 48512.18,
+      "min_ns_per_operation": 46851.42,
+      "name": "event.one.unrelated8192",
+      "operation": "event_emit",
+      "operations_per_sample": 5000,
+      "p95_ns_per_operation": 51348.7,
+      "samples_ns_per_operation": [
+        49164.92,
+        51348.7,
+        49210.62,
+        48512.18,
+        47108.86,
+        47888.68,
+        46851.42
+      ],
+      "unrelated_listeners": 8192,
+      "verified_callbacks_per_sample": 5000
+    },
+    {
+      "cleanup_verified": true,
+      "matching_listeners": 64,
+      "median_ns_per_operation": 4398.12,
+      "min_ns_per_operation": 4114,
+      "name": "event.fanout64",
+      "operation": "event_emit",
+      "operations_per_sample": 5000,
+      "p95_ns_per_operation": 4959.78,
+      "samples_ns_per_operation": [
+        4308.06,
+        4114,
+        4533.42,
+        4679.04,
+        4312.18,
+        4398.12,
+        4959.78
+      ],
+      "unrelated_listeners": 0,
+      "verified_callbacks_per_sample": 320000
+    },
+    {
+      "cleanup_verified": true,
+      "matching_listeners": 64,
+      "median_ns_per_operation": 55207.4,
+      "min_ns_per_operation": 53982.76,
+      "name": "event.fanout64.unrelated8192",
+      "operation": "event_emit",
+      "operations_per_sample": 5000,
+      "p95_ns_per_operation": 56920.62,
+      "samples_ns_per_operation": [
+        55367.78,
+        55072,
+        55479.28,
+        54106.16,
+        56920.62,
+        53982.76,
+        55207.4
+      ],
+      "unrelated_listeners": 8192,
+      "verified_callbacks_per_sample": 320000
+    },
+    {
+      "cleanup_verified": true,
+      "matching_listeners": 0,
+      "median_ns_per_operation": 46684.6,
+      "min_ns_per_operation": 45520.26,
+      "name": "event.missing.unrelated8192",
+      "operation": "event_emit",
+      "operations_per_sample": 5000,
+      "p95_ns_per_operation": 47938.68,
+      "samples_ns_per_operation": [
+        47127.9,
+        47938.68,
+        46617.4,
+        46684.6,
+        45755.16,
+        45520.26,
+        47920.94
+      ],
+      "unrelated_listeners": 8192,
+      "verified_callbacks_per_sample": 0
+    },
+    {
+      "cleanup_verified": true,
+      "matching_listeners": 0,
+      "median_ns_per_operation": 3041.845703125,
+      "min_ns_per_operation": 2802.783203125,
+      "name": "task.cancel4096",
+      "operation": "task_cancel",
+      "operations_per_sample": 4096,
+      "p95_ns_per_operation": 3427.2216796875,
+      "samples_ns_per_operation": [
+        3041.845703125,
+        3161.572265625,
+        2848.095703125,
+        2802.783203125,
+        3335.05859375,
+        3427.2216796875,
+        2923.193359375
+      ],
+      "unrelated_listeners": 0,
+      "verified_callbacks_per_sample": 0
+    },
+    {
+      "cleanup_verified": true,
+      "matching_listeners": 0,
+      "median_ns_per_operation": 110.107421875,
+      "min_ns_per_operation": 107.5439453125,
+      "name": "task.pump4096.batch64",
+      "operation": "task_run",
+      "operations_per_sample": 4096,
+      "p95_ns_per_operation": 127.1728515625,
+      "samples_ns_per_operation": [
+        110.8642578125,
+        108.935546875,
+        110.888671875,
+        109.86328125,
+        107.5439453125,
+        110.107421875,
+        127.1728515625
+      ],
+      "unrelated_listeners": 0,
+      "verified_callbacks_per_sample": 4096
+    }
+  ],
+  "clock": "std::chrono::steady_clock",
+  "compiler_msvc": 195136260,
+  "configuration": "Release",
+  "iterations": 5000,
+  "runtime_version": "0.1.0",
+  "samples": 7,
+  "schema_version": 1,
+  "warmup_samples": 1,
+  "artifacts": {
+    "benchmark_file": "nf_benchmark.exe",
+    "benchmark_sha256": "56baa97c2e5041f937cee533be445cd5871ee7674390279780c4a615d3c1f186",
+    "runtime_file": "NeonForge.Core.dll",
+    "runtime_sha256": "0d363362e0564dd99fa8f2c9c7ba4a6b5deb9bcaf3df6570dd3cf344759ab603"
+  },
+  "environment": {
+    "system": "Windows",
+    "release": "11",
+    "machine": "AMD64",
+    "processor": "Intel64 Family 6 Model 85 Stepping 7, GenuineIntel"
+  },
+  "recorded_at_utc": "2026-11-02T04:28:41.008818+00:00",
+  "scope": "standalone C ABI microbenchmarks; no game or competitor comparison"
+}

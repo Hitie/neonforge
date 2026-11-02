@@ -47,6 +47,20 @@ class DistributionTests(unittest.TestCase):
             self.assertTrue(any(name.endswith('/src/kernel.cpp') for name in paths))
             self.assertFalse(any('/build-' in name or '/data/' in name or name.endswith('PROGRESS.md') for name in paths))
 
+    def test_extracted_sdk_benchmark_uses_the_packaged_runtime(self):
+        result = package_sdk.build_distributions(SOURCE, BUILD, self.root / 'dist')
+        with zipfile.ZipFile(self.root / 'dist' / result['sdk']['name']) as archive:
+            archive.extractall(self.root / 'extracted')
+        sdk = next((self.root / 'extracted').iterdir())
+        self.assertTrue((sdk / 'tools/nf_benchmark.exe').exists(), 'SDK benchmark binary missing')
+        self.assertTrue((sdk / 'tools/benchmark.py').exists(), 'SDK benchmark runner missing')
+        command = [sys.executable, str(sdk / 'tools/benchmark.py'), '--executable', str(sdk / 'tools/nf_benchmark.exe'), '--runtime', str(sdk / 'runtime/NeonForge.Core.dll'), '--iterations', '64', '--samples', '3', '--output', str(self.root / 'report.json')]
+        run = subprocess.run(command, capture_output=True, text=True, timeout=45)
+        self.assertEqual(run.returncode, 0, run.stderr + run.stdout)
+        report = json.loads((self.root / 'report.json').read_text())
+        self.assertEqual(len(report['cases']), 9)
+        self.assertEqual(report['artifacts']['runtime_sha256'], hashlib.sha256((sdk / 'runtime/NeonForge.Core.dll').read_bytes()).hexdigest())
+
     def test_source_export_excludes_private_and_build_files(self):
         root = self.root / 'source'
         for name in ['src/owned.cpp', 'LICENSE', 'build/private.cpp', 'data/save.json', 'PROGRESS.md', 'game-file-inventory.csv', 'tools/__pycache__/secret.pyc', '.github/private-key']:

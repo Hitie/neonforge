@@ -7,8 +7,8 @@ import struct
 import zipfile
 from pathlib import Path
 
-VERSION = '0.1.0-dev.1'
-ROOT_FILES = {'.clang-format', '.gitignore', 'CMakeLists.txt', 'build.ps1', 'README.md', 'CHANGELOG.md', 'LICENSE', 'CONTRIBUTING.md', 'SECURITY.md', '.github/CODEOWNERS'}
+VERSION = '0.1.1-dev.1'
+ROOT_FILES = {'.clang-format', '.gitignore', 'CMakeLists.txt', 'build.ps1', 'README.md', 'CHANGELOG.md', 'LICENSE', 'CONTRIBUTING.md', 'SECURITY.md', '.github/CODEOWNERS', 'benchmarks/results/baseline.json', 'benchmarks/results/candidate.json'}
 DIRECTORIES = {
     'src': {'.cpp', '.hpp', '.h'},
     'include': {'.h', '.hpp'},
@@ -20,6 +20,7 @@ DIRECTORIES = {
     'adapters': {'.json'},
     '.github': {'.yml', '.yaml', '.md'},
     'assets': {'.svg'},
+    'benchmarks': {'.cpp'},
 }
 
 
@@ -117,7 +118,7 @@ def _checksums(entries):
 
 def build_distributions(source, build, output):
     source, build, output = Path(source).resolve(), Path(build).resolve(), Path(output).resolve()
-    binaries = {name: _native(build / name) for name in ['neonforge.exe', 'NeonForge.Core.dll', 'nf_example.dll', 'nf_consumer.dll', 'nf_winmm_probe.exe']}
+    binaries = {name: _native(build / name) for name in ['neonforge.exe', 'NeonForge.Core.dll', 'nf_example.dll', 'nf_consumer.dll', 'nf_winmm_probe.exe', 'nf_benchmark.exe']}
     original = {}
     for path in source_files(source):
         _export_path(source, path)
@@ -133,6 +134,7 @@ def build_distributions(source, build, output):
         'examples/mods/org.neonforge.example/manifest.json': original['examples/manifests/provider.json'],
         'examples/mods/org.neonforge.consumer/manifest.json': original['examples/manifests/consumer.json'],
         'tools/nf_winmm_probe.exe': binaries['nf_winmm_probe.exe'],
+        'tools/nf_benchmark.exe': binaries['nf_benchmark.exe'],
         'LICENSE': original['LICENSE'],
     }
     for name, data in original.items():
@@ -140,7 +142,7 @@ def build_distributions(source, build, output):
             sdk[name] = data
         elif name.startswith('examples/native/'):
             sdk[name] = data
-        elif name.startswith(('docs/', 'schemas/', 'adapters/')) or name == 'tools/forge.py':
+        elif name.startswith(('docs/', 'schemas/', 'adapters/', 'benchmarks/results/')) or name in {'tools/forge.py', 'tools/benchmark.py'}:
             sdk[name] = data
     sdk['README.md'] = f'''# NEONFORGE Core {VERSION} — standalone SDK
 

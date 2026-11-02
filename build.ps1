@@ -28,6 +28,10 @@ try {
   if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @common ($PSScriptRoot+'\tests\kernel_tests.cpp') 'NeonForge.Core.lib' '/Fe:nf_kernel_tests.exe'
   if($LASTEXITCODE){exit $LASTEXITCODE}
+  & ($bin+'\cl.exe') @common ($PSScriptRoot+'\tests\event_routes_test.cpp') '/Fe:nf_event_routes_tests.exe'
+  if($LASTEXITCODE){exit $LASTEXITCODE}
+  & ($bin+'\cl.exe') @common '/DNF_BENCHMARK_RELEASE' ($PSScriptRoot+'\benchmarks\runtime_benchmark.cpp') ($PSScriptRoot+'\src\json.cpp') '/Fe:nf_benchmark.exe'
+  if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @common ($PSScriptRoot+'\src\host.cpp') ($PSScriptRoot+'\src\json.cpp') ($PSScriptRoot+'\src\manifest.cpp') '/Fe:neonforge.exe'
   if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @ccommon '/std:c11' '/LD' ($PSScriptRoot+'\examples\native\provider.c') '/Fe:nf_example.dll'
@@ -35,6 +39,8 @@ try {
   & ($bin+'\cl.exe') @common '/LD' ($PSScriptRoot+'\examples\native\consumer.cpp') '/Fe:nf_consumer.dll'
   if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @ccommon '/std:c11' '/LD' ($PSScriptRoot+'\tests\failing_plugin.c') '/Fe:nf_failing.dll'
+  if($LASTEXITCODE){exit $LASTEXITCODE}
+  & ($bin+'\cl.exe') @common '/LD' ($PSScriptRoot+'\tests\noncancelling_runtime.cpp') '/Fe:nf_noncancelling_runtime.dll'
   if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @ccommon '/std:c11' '/c' ($PSScriptRoot+'\tests\c_header_test.c')
   if($LASTEXITCODE){exit $LASTEXITCODE}
@@ -50,9 +56,12 @@ try {
   if(-not $SkipTests){
     & .\nf_package_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_kernel_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
+    & .\nf_event_routes_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_plugin_abi_test.exe .\nf_example.dll .\nf_consumer.dll .\nf_generated.dll;if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\host_integration.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\tool_tests.py');if($LASTEXITCODE){exit $LASTEXITCODE}
-    & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\probe_test.py') $dest;exit $LASTEXITCODE
+    & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\probe_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
+    & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\benchmark_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
+    & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\package_sdk_test.py') $dest;exit $LASTEXITCODE
   }
 } finally { Pop-Location }
