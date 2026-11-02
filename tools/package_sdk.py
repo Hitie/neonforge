@@ -8,7 +8,7 @@ import zipfile
 from pathlib import Path
 
 VERSION = '0.1.0-dev.1'
-ROOT_FILES = {'.clang-format', '.gitignore', 'CMakeLists.txt', 'build.ps1', 'README.md', 'CHANGELOG.md', 'LICENSE', 'CONTRIBUTING.md', 'SECURITY.md'}
+ROOT_FILES = {'.clang-format', '.gitignore', 'CMakeLists.txt', 'build.ps1', 'README.md', 'CHANGELOG.md', 'LICENSE', 'CONTRIBUTING.md', 'SECURITY.md', '.github/CODEOWNERS'}
 DIRECTORIES = {
     'src': {'.cpp', '.hpp', '.h'},
     'include': {'.h', '.hpp'},
@@ -18,7 +18,7 @@ DIRECTORIES = {
     'docs': {'.md'},
     'schemas': {'.json'},
     'adapters': {'.json'},
-    '.github': {'.yml', '.yaml', '.md', ''},
+    '.github': {'.yml', '.yaml', '.md'},
     'assets': {'.svg'},
 }
 
