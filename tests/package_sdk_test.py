@@ -49,7 +49,7 @@ class DistributionTests(unittest.TestCase):
 
     def test_source_export_excludes_private_and_build_files(self):
         root = self.root / 'source'
-        for name in ['src/owned.cpp', 'LICENSE', 'build/private.cpp', 'data/save.json', 'PROGRESS.md', 'game-file-inventory.csv', 'tools/__pycache__/secret.pyc']:
+        for name in ['src/owned.cpp', 'LICENSE', 'build/private.cpp', 'data/save.json', 'PROGRESS.md', 'game-file-inventory.csv', 'tools/__pycache__/secret.pyc', '.github/private-key']:
             path = root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text('fixture')
