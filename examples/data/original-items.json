@@ -1,0 +1,51 @@
+{
+  "format": 1,
+  "schemas": {
+    "Item": {
+      "fields": {
+        "damage": {"type": "u64", "required": true},
+        "title": {"type": "string", "required": true},
+        "identity": {"type": "id"},
+        "position": {"type": "vector3"},
+        "tint": {"type": "color"},
+        "rarity": {"type": "enum", "enum_type": "ExampleRarity"},
+        "tags": {"type": "array", "element": {"type": "name"}}
+      }
+    }
+  },
+  "transactions": [
+    {
+      "owner": "org.neonforge.data.base",
+      "source": "Original base example",
+      "expect_revision": "0",
+      "operations": [
+        {"op": "create", "record": "Items.Original", "type": "Item"},
+        {"op": "set", "record": "Items.Original", "field": "damage", "value": {"type": "u64", "value": "100"}},
+        {"op": "set", "record": "Items.Original", "field": "title", "value": {"type": "string", "value": "NEONFORGE original sample"}},
+        {"op": "set", "record": "Items.Original", "field": "identity", "value": {"type": "id", "value": "18446744073709551615"}},
+        {"op": "set", "record": "Items.Original", "field": "position", "value": {"type": "vector3", "value": [1, 2, 3]}},
+        {"op": "set", "record": "Items.Original", "field": "tint", "value": {"type": "color", "value": [24, 180, 220, 255]}},
+        {"op": "set", "record": "Items.Original", "field": "rarity", "value": {"type": "enum", "enum_type": "ExampleRarity", "value": "Rare"}},
+        {"op": "set", "record": "Items.Original", "field": "tags", "value": {"type": "array", "element": {"type": "name"}, "value": [{"type": "name", "value": "Starter"}]}}
+      ]
+    },
+    {
+      "owner": "org.neonforge.data.custom",
+      "source": "Original custom example",
+      "expect_revision": "1",
+      "operations": [
+        {"op": "clone", "record": "Items.Custom", "from": "Items.Original"},
+        {"op": "set", "record": "Items.Custom", "field": "title", "value": {"type": "string", "value": "NEONFORGE custom sample"}},
+        {"op": "append", "record": "Items.Custom", "field": "tags", "value": {"type": "name", "value": "Custom"}, "unique": true}
+      ]
+    },
+    {
+      "owner": "org.neonforge.data.balance",
+      "source": "Original balance example",
+      "expect_revision": "2",
+      "operations": [
+        {"op": "set", "record": "Items.Custom", "field": "damage", "value": {"type": "u64", "value": "42"}}
+      ]
+    }
+  ]
+}

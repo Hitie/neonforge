@@ -1,6 +1,6 @@
 # Capability and evidence status
 
-Development SDK 0.1.4. The full project remains unfinished.
+Development SDK 0.1.5. The full project remains unfinished.
 
 | Area | Current state |
 | --- | --- |
@@ -18,6 +18,7 @@ Development SDK 0.1.4. The full project remains unfinished.
 | Engine lifecycle, native registration and reflection | Not implemented |
 | Standalone Lua values/calls/events/tasks/settings/local modules/reload | Implemented and tested outside the game; see [scripting](scripting.md) |
 | Lua game observers/lifecycle/input/overlay | Not implemented |
+| Original offline typed data/transaction engine and authoring CLI | Implemented and tested outside the game; see [data model](data-model.md) |
 | Actual TweakDB edits | Not implemented |
 | Archive/resource/appearance/world/quest extensions | Not implemented |
 | Original compiler and game-script bytecode integration | Not implemented |
@@ -29,7 +30,7 @@ Every future capability must identify its implementation, negative/lifecycle tes
 
 ## Next integration gate
 
-Complete the [offline readiness plan](plans/2026-11-03-offline-readiness.md) before live integration. Read-only investigation of the user's fresh installation is authorized for identity, format and type research. The next implementation priority is expanded values and the original transactional database model.
+Complete the [offline readiness plan](plans/2026-11-03-offline-readiness.md) before live integration. Read-only investigation of the user's fresh installation is authorized for identity, format and type research. The offline value/transaction foundation is implemented; database templates/inheritance, last-valid reload and engine adapters remain pending.
 
 After that offline gate, qualify a complete original bootstrap, demonstrate safe initialization timing and verify the first engine lifecycle/native call on an isolated candidate profile. Only then enable the corresponding adapter capability. The SDK candidate remains intended for standalone developer evaluation.
 

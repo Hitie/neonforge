@@ -277,7 +277,7 @@ int run(const std::vector<nf::Manifest> &mods, const std::vector<size_t> &order,
     check(a->stats(r, &stats), "final statistics", a, r);
     nf::Json::Object report;
     report.emplace("product", nf::Json(std::string("NEONFORGE Core")));
-    report.emplace("version", nf::Json(std::string("0.1.4-dev.1")));
+    report.emplace("version", nf::Json(std::string("0.1.5-dev.1")));
     report.emplace("mode", nf::Json(std::string("standalone; engine services unavailable")));
     report.emplace("started", nf::Json(static_cast<double>(started)));
     report.emplace("load_order", order_json(mods, order));
@@ -317,7 +317,7 @@ int wmain(int argc, wchar_t **wide)
             args.push_back(utf8(std::filesystem::path(wide[i])));
         if (argc == 2 && args[1] == "--version")
         {
-            std::cout << "NEONFORGE Core 0.1.4-dev.1 (standalone SDK candidate)\n";
+            std::cout << "NEONFORGE Core 0.1.5-dev.1 (standalone SDK candidate)\n";
             return 0;
         }
         if (argc == 2 && args[1] == "capabilities")
