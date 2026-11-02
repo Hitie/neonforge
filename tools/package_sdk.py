@@ -7,7 +7,7 @@ import struct
 import zipfile
 from pathlib import Path
 
-VERSION = '0.1.3-dev.1'
+VERSION = '0.1.4-dev.1'
 ROOT_FILES = {'.gitattributes', '.clang-format', '.gitignore', 'CMakeLists.txt', 'build.ps1', 'README.md', 'CHANGELOG.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CONTRIBUTING.md', 'SECURITY.md', '.github/CODEOWNERS', 'benchmarks/results/baseline.json', 'benchmarks/results/candidate.json'}
 DIRECTORIES = {
     'src': {'.cpp', '.hpp', '.h'},
@@ -164,7 +164,7 @@ def build_distributions(source, build, output):
             sdk[name] = data
         elif name.startswith(('examples/native/', 'examples/scripts/')):
             sdk[name] = data
-        elif name.startswith(('docs/', 'schemas/', 'adapters/', 'benchmarks/results/')) or name in {'tools/forge.py', 'tools/benchmark.py'}:
+        elif name.startswith(('docs/', 'schemas/', 'adapters/', 'benchmarks/results/')) or name in {'tools/forge.py', 'tools/benchmark.py', 'tools/game_audit.py'}:
             sdk[name] = data
     sdk['README.md'] = f'''# NEONFORGE Core {VERSION} — standalone SDK
 

@@ -84,6 +84,7 @@ try {
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\script_integration.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\script_quotas_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\dependency_tests.py');if($LASTEXITCODE){exit $LASTEXITCODE}
+    & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\game_audit_test.py');if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\script_benchmark_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\tool_tests.py');if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\probe_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
