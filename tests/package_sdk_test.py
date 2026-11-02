@@ -99,11 +99,41 @@ class DistributionTests(unittest.TestCase):
         selected = [p.relative_to(root).as_posix() for p in package_sdk.source_files(root)]
         self.assertEqual(selected, ['LICENSE', 'src/owned.cpp'])
 
+    def test_extracted_sdk_runs_original_lua_mods_and_retains_notices(self):
+        result = package_sdk.build_distributions(SOURCE, BUILD, self.root / 'dist')
+        with zipfile.ZipFile(self.root / 'dist' / result['sdk']['name']) as archive:
+            archive.extractall(self.root / 'extracted')
+        sdk = next((self.root / 'extracted').iterdir())
+        run = subprocess.run([str(sdk / 'runtime/neonforge.exe'), 'run', str(sdk / 'examples/scripts'), str(sdk / 'script-data'), '--ticks', '3'], capture_output=True, text=True, timeout=30)
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertEqual(json.loads(run.stdout)['started'], 2)
+        self.assertEqual(json.loads((sdk / 'script-data/settings/org.neonforge.lua.consumer/result.json').read_text())['answer'], 42)
+        self.assertTrue((sdk / 'THIRD_PARTY_NOTICES.md').is_file())
+        self.assertTrue((sdk / 'third_party/lua/LICENSE.txt').is_file())
+        with zipfile.ZipFile(self.root / 'dist' / result['source']['name']) as archive:
+            self.assertTrue(any(name.endswith('/third_party/lua/lvm.c') for name in archive.namelist()))
+
     def test_same_inputs_produce_identical_archives(self):
         first = package_sdk.build_distributions(SOURCE, BUILD, self.root / 'one')
         second = package_sdk.build_distributions(SOURCE, BUILD, self.root / 'two')
         for key in ['source', 'sdk']:
             self.assertEqual(first[key]['sha256'], second[key]['sha256'])
+
+    def test_missing_or_changed_upstream_source_cannot_be_packaged(self):
+        source = self.root / 'altered-source'
+        for path in package_sdk.source_files(SOURCE):
+            target = source / path.relative_to(SOURCE)
+            target.parent.mkdir(parents=True,exist_ok=True)
+            shutil.copy2(path,target)
+        header = source / 'third_party/lua/lua.h'
+        original = header.read_bytes()
+        for change in ['missing','modified']:
+            if change == 'missing': header.unlink()
+            else: header.write_bytes(original+b'\n/* modified */\n')
+            output = self.root / ('rejected-'+change)
+            with self.assertRaises(package_sdk.PackageError):
+                package_sdk.build_distributions(source,BUILD,output)
+            self.assertFalse(output.exists())
 
     def test_missing_binary_cannot_produce_a_partial_distribution(self):
         incomplete = self.root / 'incomplete'

@@ -1,0 +1,1 @@
+{"id":"org.neonforge.lua.provider","name":"NEONFORGE Lua Provider","version":"0.1.0","api":1,"entry":"init.lua","capabilities":[{"name":"nf.script.lua","version":1,"required":true}]}

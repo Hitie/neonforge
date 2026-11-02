@@ -7,12 +7,13 @@ import struct
 import zipfile
 from pathlib import Path
 
-VERSION = '0.1.2-dev.1'
-ROOT_FILES = {'.clang-format', '.gitignore', 'CMakeLists.txt', 'build.ps1', 'README.md', 'CHANGELOG.md', 'LICENSE', 'CONTRIBUTING.md', 'SECURITY.md', '.github/CODEOWNERS', 'benchmarks/results/baseline.json', 'benchmarks/results/candidate.json'}
+VERSION = '0.1.3-dev.1'
+ROOT_FILES = {'.gitattributes', '.clang-format', '.gitignore', 'CMakeLists.txt', 'build.ps1', 'README.md', 'CHANGELOG.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CONTRIBUTING.md', 'SECURITY.md', '.github/CODEOWNERS', 'benchmarks/results/baseline.json', 'benchmarks/results/candidate.json'}
 DIRECTORIES = {
     'src': {'.cpp', '.hpp', '.h'},
     'include': {'.h', '.hpp'},
-    'examples': {'.c', '.cpp', '.h', '.hpp', '.json'},
+    'examples': {'.c', '.cpp', '.h', '.hpp', '.json', '.lua'},
+    'third_party/lua': {'.c', '.h', '.hpp', '.txt', '.json'},
     'tests': {'.c', '.cpp', '.h', '.hpp', '.py'},
     'tools': {'.py'},
     'docs': {'.md'},
@@ -118,7 +119,7 @@ def _checksums(entries):
 
 def build_distributions(source, build, output):
     source, build, output = Path(source).resolve(), Path(build).resolve(), Path(output).resolve()
-    binaries = {name: _native(build / name) for name in ['neonforge.exe', 'NeonForge.Core.dll', 'nf_example.dll', 'nf_consumer.dll', 'nf_winmm_probe.exe', 'nf_benchmark.exe', 'nf_typed_example.exe']}
+    binaries = {name: _native(build / name) for name in ['neonforge.exe', 'NeonForge.Core.dll', 'nf_example.dll', 'nf_consumer.dll', 'nf_winmm_probe.exe', 'nf_benchmark.exe', 'nf_typed_example.exe', 'nf_script_benchmark.exe']}
     import_library = build / 'NeonForge.Core.lib'
     _regular(import_library)
     library_data = import_library.read_bytes()
@@ -128,13 +129,25 @@ def build_distributions(source, build, output):
     for path in source_files(source):
         _export_path(source, path)
         original[path.relative_to(source).as_posix()] = path.read_bytes()
-    for required in ['LICENSE', 'include/neonforge/api.h', 'examples/manifests/provider.json', 'examples/manifests/consumer.json', 'docs/status.md']:
+    for required in ['.gitattributes', 'THIRD_PARTY_NOTICES.md', 'third_party/lua/LICENSE.txt', 'third_party/lua/UPSTREAM.json', 'LICENSE', 'include/neonforge/api.h', 'examples/manifests/provider.json', 'examples/manifests/consumer.json', 'docs/status.md']:
         if required not in original:
             raise PackageError('Required source file missing: ' + required)
+    try:
+        provenance = json.loads(original['third_party/lua/UPSTREAM.json'])
+        expected = provenance['source_files_sha256']
+        collected = {name.removeprefix('third_party/lua/'): data for name, data in original.items() if name.startswith('third_party/lua/') and Path(name).suffix in {'.c', '.h', '.hpp'}}
+        if collected.keys() != expected.keys():
+            raise ValueError('missing or unexpected Lua source')
+        for name, data in collected.items():
+            if hashlib.sha256(data).hexdigest() != expected[name]:
+                raise ValueError('modified Lua source: ' + name)
+    except (KeyError, ValueError, TypeError) as error:
+        raise PackageError('Pinned dependency export verification failed: ' + str(error)) from error
     sdk = {
         'runtime/neonforge.exe': binaries['neonforge.exe'],
         'runtime/NeonForge.Core.dll': binaries['NeonForge.Core.dll'],
         'runtime/nf_typed_example.exe': binaries['nf_typed_example.exe'],
+        'runtime/nf_script_benchmark.exe': binaries['nf_script_benchmark.exe'],
         'lib/NeonForge.Core.lib': library_data,
         'examples/mods/org.neonforge.example/plugin.dll': binaries['nf_example.dll'],
         'examples/mods/org.neonforge.consumer/plugin.dll': binaries['nf_consumer.dll'],
@@ -143,11 +156,13 @@ def build_distributions(source, build, output):
         'tools/nf_winmm_probe.exe': binaries['nf_winmm_probe.exe'],
         'tools/nf_benchmark.exe': binaries['nf_benchmark.exe'],
         'LICENSE': original['LICENSE'],
+        'THIRD_PARTY_NOTICES.md': original['THIRD_PARTY_NOTICES.md'],
+        'third_party/lua/LICENSE.txt': original['third_party/lua/LICENSE.txt'],
     }
     for name, data in original.items():
         if name.startswith('include/'):
             sdk[name] = data
-        elif name.startswith('examples/native/'):
+        elif name.startswith(('examples/native/', 'examples/scripts/')):
             sdk[name] = data
         elif name.startswith(('docs/', 'schemas/', 'adapters/', 'benchmarks/results/')) or name in {'tools/forge.py', 'tools/benchmark.py'}:
             sdk[name] = data
@@ -155,11 +170,13 @@ def build_distributions(source, build, output):
 
 One foundation. Build Night City.
 
-This is a development SDK, not an installed Cyberpunk mod or a replacement for the six reference frameworks. Engine hooks, Lua, TweakDB, resources, the compiler and game UI remain unavailable. Do not copy this package over your game's loaders.
+This is a development SDK, not an installed Cyberpunk mod or a replacement for the six reference frameworks. Standalone Lua is available. Engine hooks, TweakDB, resources, the compiler and game UI remain unavailable. Do not copy this package over your game's loaders.
 
 Extract the complete directory and double-click Run-Demo.cmd. The original C and C++ plugins exchange a service, receive an event, execute a deferred task and persist their results under data/. No game installation is required. Windows x64 and the Microsoft Visual C++ x64 runtime are required; Python is needed only for tools/forge.py.
 
 Run-Typed-Demo.cmd demonstrates signature lookup and typed native invocation from C, preserving its result under data/typed-demo/. See docs/typed-calls.md for ownership, limits and build instructions using lib/NeonForge.Core.lib.
+
+Run-Lua-Demo.cmd loads the original Lua provider/consumer packages, resolves typed calls and saves their result under data/lua-demo/. See docs/scripting.md. The host embeds pinned Lua 5.5.1; its MIT license and attribution are included.
 
 Commands:
 
@@ -172,6 +189,7 @@ SHA256SUMS.txt verifies every other file in this package. Standalone tests do no
 '''.encode('utf-8')
     sdk['Run-Demo.cmd'] = b'@echo off\r\nsetlocal\r\npushd "%~dp0"\r\n"runtime\\neonforge.exe" run "examples\\mods" "data" --ticks 3\r\nset "nf_result=%ERRORLEVEL%"\r\necho.\r\nif not "%~1"=="--no-pause" pause\r\npopd\r\nexit /b %nf_result%\r\n'
     sdk['Run-Typed-Demo.cmd'] = b'@echo off\r\nsetlocal\r\npushd "%~dp0"\r\n"runtime\\nf_typed_example.exe"\r\nset "nf_result=%ERRORLEVEL%"\r\necho.\r\nif not "%~1"=="--no-pause" pause\r\npopd\r\nexit /b %nf_result%\r\n'
+    sdk['Run-Lua-Demo.cmd'] = b'@echo off\r\nsetlocal\r\npushd "%~dp0"\r\n"runtime\\neonforge.exe" run "examples\\scripts" "data\\lua-demo" --ticks 3\r\nset "nf_result=%ERRORLEVEL%"\r\necho.\r\nif not "%~1"=="--no-pause" pause\r\npopd\r\nexit /b %nf_result%\r\n'
     original['SHA256SUMS.txt'] = _checksums(original)
     sdk['SHA256SUMS.txt'] = _checksums(sdk)
     output.mkdir(parents=True, exist_ok=True)

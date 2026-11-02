@@ -71,7 +71,7 @@ def _manifest(value):
     if type(value.get('api')) is not int or value['api']!=1:raise ForgeError('unsupported API major')
     if not isinstance(value.get('name'),str) or not value['name'] or '\0' in value['name'] or len(value['name'].encode('utf-8'))>256:raise ForgeError('invalid mod name')
     _safe(value.get('entry'))
-    if not value['entry'].endswith('.dll'):raise ForgeError('native entry must be .dll')
+    if not value['entry'].endswith(('.dll','.lua')):raise ForgeError('entry must be .dll or .lua')
     def identifier(text):
         if not isinstance(text,str) or not ID.fullmatch(text) or len(text)>128:raise ForgeError('invalid dotted identifier')
         return text
@@ -120,7 +120,7 @@ def inspect_package(package):
                 files[key]=h.hexdigest()
             if 'manifest.json' not in files or archive.getinfo('manifest.json').file_size>1048576:raise ForgeError('missing/oversized manifest.json')
             manifest=_manifest(_json(archive.read('manifest.json')))
-            if manifest['entry'] not in files:raise ForgeError('declared native entry is absent')
+            if manifest['entry'] not in files:raise ForgeError('declared entry is absent')
             return {'manifest':manifest,'files':files,'uncompressed_bytes':total,'sha256':_hash(package)}
     except (OSError,zipfile.BadZipFile,RuntimeError) as e:
         if isinstance(e,ForgeError):raise
