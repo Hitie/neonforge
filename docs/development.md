@@ -22,6 +22,8 @@ If tool discovery is restricted, pass the Python executable explicitly and run M
 
 Package tests cover JSON, Unicode, malformed paths/manifests, semantic versions, dependency ordering/cycles and capability checks. Kernel tests exercise the real DLL, context ownership, callback mutation, task cancellation, leases, settings persistence, exact JSON preservation, stale runtime IDs and 100 cleanup cycles. Integration tests load actual C/C++ DLLs and prove service exchange, restart persistence, all-query-before-start behavior and failed-start cleanup. ABI tests pass deliberately truncated tables to the shipped examples and generated starter. Tool tests exercise real ZIP/filesystem operations, modified-file preservation and rollback. The Windows probe resolves system-library name/ordinal exports and performs representative timer calls.
 
+Typed tests exercise exact numeric conversions, function signatures, caller-owned result storage, callback shutdown/mutation, nesting and resource limits. The SDK includes the typed C demo and an import library; distribution tests rebuild and run that example using only the extracted SDK.
+
 These tests establish standalone behavior only. They do not establish engine reflection, resource loading, script compiler correctness, live reload of native modules, game performance or compatibility with other mod loaders.
 
 ## Review changes

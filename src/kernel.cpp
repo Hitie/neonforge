@@ -2,6 +2,7 @@
 #include "kernel.hpp"
 #include "event_routes.hpp"
 #include "manifest.hpp"
+#include "typed_values.hpp"
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -52,6 +53,20 @@ struct Lease
     nf_context owner;
     nf_context provider;
     nf_token service;
+};
+struct TypedFunction
+{
+    nf_context owner;
+    std::string name;
+    uint32_t result_kind;
+    std::vector<uint32_t> arguments;
+    nf_native_fn fn;
+    void *user;
+};
+struct TypedResult
+{
+    nf_context owner;
+    OwnedValue value;
 };
 struct Failure
 {
@@ -152,9 +167,13 @@ struct nf_runtime
     std::vector<nf_token> task_snapshot;
     std::map<nf_token, nf::Service> services;
     std::map<nf_token, nf::Lease> leases;
+    std::map<nf_token, nf::TypedFunction> functions;
+    std::map<std::string, nf_token, std::less<>> function_names;
+    std::map<nf_token, nf::TypedResult> results;
+    uint64_t result_bytes = 0;
     std::string error;
     nf_stats counters{};
-    unsigned dispatch_depth = 0, active_calls = 0;
+    unsigned dispatch_depth = 0, typed_depth = 0, active_calls = 0;
     bool pumping = false;
 };
 namespace nf
@@ -338,6 +357,22 @@ nf_status NF_CALL context_close(nf_runtime *r, nf_context c)
                      if (owner.closing)
                          return NF_OK;
                      owner.closing = true;
+                     for (auto i = r->functions.begin(); i != r->functions.end();)
+                         if (i->second.owner == c)
+                         {
+                             r->function_names.erase(i->second.name);
+                             i = r->functions.erase(i);
+                         }
+                         else
+                             ++i;
+                     for (auto i = r->results.begin(); i != r->results.end();)
+                         if (i->second.owner == c)
+                         {
+                             r->result_bytes -= i->second.value.storage.size();
+                             i = r->results.erase(i);
+                         }
+                         else
+                             ++i;
                      for (auto i = r->subscriptions.begin(); i != r->subscriptions.end();)
                          if (i->second.owner == c)
                          {
@@ -875,13 +910,247 @@ nf_status NF_CALL context_metrics(nf_runtime *r, nf_context c, nf_context_stats 
                      return NF_OK;
                  });
 }
+nf_status NF_CALL typed_register(nf_runtime *runtime, nf_context owner, nf_str key,
+                                 const nf_signature *signature, nf_native_fn fn, void *user,
+                                 nf_token *out)
+{
+    if (out)
+        *out = 0;
+    return guard(runtime,
+                 [&](nf_runtime *r) -> nf_status
+                 {
+                     context(r, owner);
+                     if (!out || !fn || !signature ||
+                         signature->struct_size != sizeof(*signature) || signature->reserved ||
+                         signature->result_kind > NF_VALUE_BYTES ||
+                         signature->argument_count > 32 ||
+                         (!signature->argument_kinds && signature->argument_count))
+                         fail(NF_E_ARGUMENT, "invalid typed function signature");
+                     if (r->functions.size() >= 4096)
+                         fail(NF_E_LIMIT, "typed function limit");
+                     auto key_name = name(key);
+                     if (r->function_names.contains(key_name))
+                         fail(NF_E_CONFLICT, "typed function already registered");
+                     std::vector<uint32_t> arguments;
+                     for (uint32_t i = 0; i < signature->argument_count; ++i)
+                     {
+                         auto kind = signature->argument_kinds[i];
+                         if (!kind || kind > NF_VALUE_BYTES)
+                             fail(NF_E_ARGUMENT, "invalid typed argument kind");
+                         arguments.push_back(kind);
+                     }
+                     auto id = token();
+                     r->functions.emplace(id, TypedFunction{owner, key_name, signature->result_kind,
+                                                            std::move(arguments), fn, user});
+                     try
+                     {
+                         r->function_names.emplace(key_name, id);
+                     }
+                     catch (...)
+                     {
+                         r->functions.erase(id);
+                         throw;
+                     }
+                     *out = id;
+                     return NF_OK;
+                 });
+}
+nf_status NF_CALL typed_unregister(nf_runtime *runtime, nf_context owner, nf_token id)
+{
+    return guard(runtime,
+                 [&](nf_runtime *r) -> nf_status
+                 {
+                     context(r, owner, true);
+                     auto entry = r->functions.find(id);
+                     if (entry == r->functions.end())
+                         return NF_E_HANDLE;
+                     if (entry->second.owner != owner)
+                         return NF_E_OWNER;
+                     r->function_names.erase(entry->second.name);
+                     r->functions.erase(entry);
+                     return NF_OK;
+                 });
+}
+nf_status NF_CALL typed_resolve(nf_runtime *runtime, nf_context caller, nf_str key,
+                                nf_function_info *out, uint32_t *arguments, uint32_t capacity)
+{
+    return guard(runtime,
+                 [&](nf_runtime *r) -> nf_status
+                 {
+                     context(r, caller);
+                     if (!out || out->struct_size != sizeof(*out))
+                         fail(NF_E_ARGUMENT, "typed function info size mismatch");
+                     auto found = r->function_names.find(name(key));
+                     if (found == r->function_names.end())
+                         return NF_E_NOT_FOUND;
+                     const auto &function = r->functions.at(found->second);
+                     *out = {sizeof(*out),
+                             function.result_kind,
+                             static_cast<uint32_t>(function.arguments.size()),
+                             0,
+                             found->second,
+                             function.owner};
+                     if (capacity < out->argument_count || (!arguments && out->argument_count))
+                         return NF_E_BUFFER;
+                     if (!function.arguments.empty())
+                         std::copy(function.arguments.begin(), function.arguments.end(), arguments);
+                     return NF_OK;
+                 });
+}
+nf_status NF_CALL typed_invoke(nf_runtime *runtime, nf_context caller, nf_token id,
+                               const nf_value *arguments, uint32_t count, nf_token *out)
+{
+    if (out)
+        *out = 0;
+    return guard(
+        runtime,
+        [&](nf_runtime *r) -> nf_status
+        {
+            context(r, caller);
+            if (!out || count > 32 || (!arguments && count))
+                fail(NF_E_ARGUMENT, "invalid typed arguments/output");
+            auto entry = r->functions.find(id);
+            if (entry == r->functions.end())
+                return NF_E_HANDLE;
+            auto &function = entry->second;
+            if (count != function.arguments.size())
+                fail(NF_E_ARGUMENT, "typed argument count mismatch");
+            for (uint32_t i = 0; i < count; ++i)
+                if (!valid_value(arguments[i]) || arguments[i].kind != function.arguments[i])
+                    fail(NF_E_ARGUMENT, "typed argument kind/value mismatch");
+            if (r->results.size() >= 4096)
+                fail(NF_E_LIMIT, "typed result limit");
+            if (r->typed_depth >= 16)
+                fail(NF_E_LIMIT, "typed call nesting exceeds 16");
+            struct CallDepth
+            {
+                unsigned &depth;
+                explicit CallDepth(unsigned &value) : depth(value) { ++depth; }
+                ~CallDepth() { --depth; }
+            } depth(r->typed_depth);
+            const auto provider = function.owner;
+            const auto result_kind = function.result_kind;
+            const auto fn = function.fn;
+            const auto user = function.user;
+            nf_status status = NF_OK;
+            std::optional<OwnedValue> copied;
+            bool ok =
+                invoke(r, provider,
+                       [&]
+                       {
+                           nf_value produced{};
+                           produced.struct_size = sizeof(produced);
+                           produced.kind = NF_VALUE_VOID;
+                           status = fn(provider, caller, arguments, count, &produced, user);
+                           if (status < NF_OK || status > NF_E_NOT_FOUND)
+                               fail(NF_E_CALLBACK, "native callback returned an unknown status");
+                           if (status != NF_OK)
+                               return;
+                           if (!valid_value(produced) || produced.kind != result_kind)
+                               fail(NF_E_CALLBACK, "native callback returned a mismatched value");
+                           auto owner = r->contexts.find(caller);
+                           if (owner == r->contexts.end() || owner->second.closing)
+                           {
+                               status = NF_E_STATE;
+                               return;
+                           }
+                           copied.emplace(produced);
+                       });
+            if (!ok)
+                return NF_E_CALLBACK;
+            if (status != NF_OK)
+                return status;
+            if (r->results.size() >= 4096 ||
+                copied->storage.size() > 16 * 1048576 - r->result_bytes)
+                fail(NF_E_LIMIT, "typed result payload/handle budget");
+            auto result = token();
+            auto bytes = copied->storage.size();
+            r->results.emplace(result, TypedResult{caller, std::move(*copied)});
+            r->result_bytes += bytes;
+            *out = result;
+            return NF_OK;
+        });
+}
+nf_status NF_CALL typed_read(nf_runtime *runtime, nf_context owner, nf_token id, nf_value *out,
+                             void *buffer, uint64_t capacity, uint64_t *needed)
+{
+    return guard(runtime,
+                 [&](nf_runtime *r) -> nf_status
+                 {
+                     context(r, owner, true);
+                     if (!out || out->struct_size != sizeof(*out) || !needed)
+                         fail(NF_E_ARGUMENT, "invalid typed result buffer/structure");
+                     auto entry = r->results.find(id);
+                     if (entry == r->results.end())
+                         return NF_E_HANDLE;
+                     if (entry->second.owner != owner)
+                         return NF_E_OWNER;
+                     auto &value = entry->second.value;
+                     bool text = value.value.kind == NF_VALUE_UTF8,
+                          bytes = value.value.kind == NF_VALUE_BYTES;
+                     *needed = text || bytes ? value.storage.size() + (text ? 1 : 0) : 0;
+                     if (capacity < *needed || (!buffer && *needed))
+                         return NF_E_BUFFER;
+                     auto result = value.value;
+                     if (text || bytes)
+                     {
+                         if (!value.storage.empty())
+                             std::memcpy(buffer, value.storage.data(), value.storage.size());
+                         if (text)
+                         {
+                             static_cast<char *>(buffer)[value.storage.size()] = '\0';
+                             result.as.text = {static_cast<const char *>(buffer),
+                                               value.storage.size()};
+                         }
+                         else
+                             result.as.bytes = {buffer, value.storage.size()};
+                     }
+                     *out = result;
+                     return NF_OK;
+                 });
+}
+nf_status NF_CALL typed_release(nf_runtime *runtime, nf_context owner, nf_token id)
+{
+    return guard(runtime,
+                 [&](nf_runtime *r) -> nf_status
+                 {
+                     context(r, owner, true);
+                     auto entry = r->results.find(id);
+                     if (entry == r->results.end())
+                         return NF_E_HANDLE;
+                     if (entry->second.owner != owner)
+                         return NF_E_OWNER;
+                     r->result_bytes -= entry->second.value.storage.size();
+                     r->results.erase(entry);
+                     return NF_OK;
+                 });
+}
+nf_status NF_CALL typed_stats(nf_runtime *runtime, nf_typed_stats *out)
+{
+    return guard(runtime,
+                 [&](nf_runtime *r) -> nf_status
+                 {
+                     if (!out || out->struct_size != sizeof(*out))
+                         fail(NF_E_ARGUMENT, "typed stats size mismatch");
+                     *out = {sizeof(*out), static_cast<uint32_t>(r->functions.size()),
+                             static_cast<uint32_t>(r->results.size()), 0, r->result_bytes};
+                     return NF_OK;
+                 });
+}
+const nf_typed_api &typed_api()
+{
+    static const nf_typed_api table = {
+        sizeof(nf_typed_api), NF_TYPED_ABI_VERSION, convert_value, typed_register, typed_unregister,
+        typed_resolve,        typed_invoke,         typed_read,    typed_release,  typed_stats};
+    return table;
+}
 const nf_api &kernel_api()
 {
     static const nf_api api = {sizeof(nf_api),
                                NF_ABI_VERSION,
                                0,
                                1,
-                               1,
+                               2,
                                0,
                                create,
                                destroy,

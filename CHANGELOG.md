@@ -1,5 +1,13 @@
 # Changes
 
+## 0.1.2 development SDK
+
+- Separately negotiated typed C API with exact 64-bit integers, finite floats, UTF-8 and byte spans.
+- Lossless explicit numeric conversion, copied function signatures and checked native invocation.
+- Caller-owned results, bounded payload/handle counts, callback lifetime protection and close cleanup.
+- C example, SDK import library and extracted-package rebuild tests.
+- Base ABI 1 is unchanged. Engine reflection and Lua remain unavailable.
+
 ## 0.1.1 development SDK
 
 - Per-topic event routing with cached immutable snapshots; unrelated topics are not scanned on each emission.

@@ -1,12 +1,13 @@
 # Capability and evidence status
 
-Development SDK 0.1.1. The full project remains unfinished.
+Development SDK 0.1.2. The full project remains unfinished.
 
 | Area | Current state |
 | --- | --- |
 | Native standalone host and C/C++ SDK | Implemented and tested outside the game |
 | Manifests, dependency graph, capability preflight | Implemented and tested outside the game |
 | Context/event/task/service ownership | Implemented and tested outside the game |
+| Typed values, function signatures and native invocation | Implemented and tested outside the game; see [typed-calls.md](typed-calls.md) |
 | Settings, structured logs and mod metrics | Implemented and tested outside the game |
 | Indexed events, direct task cancellation and real-DLL benchmarks | Implemented and tested outside the game; see performance.md |
 | Package receipts, preservation and exception rollback | Developer preview; real-filesystem tests, no hard process-kill recovery |
