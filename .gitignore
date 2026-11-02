@@ -1,0 +1,12 @@
+build*/
+data/
+__pycache__/
+*.pyc
+*.obj
+*.dll
+*.exe
+*.lib
+*.exp
+*.pdb
+.vs/
+PROGRESS.md

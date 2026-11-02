@@ -1,0 +1,18 @@
+name: Feature request
+description: Propose a capability with a concrete mod-author use case.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: usecase
+    attributes:
+      label: Mod-author use case
+      description: What should a mod author be able to build?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Expected behavior and acceptance
+      description: Link a roadmap capability if relevant and describe an observable success case.
+    validations:
+      required: true

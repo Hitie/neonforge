@@ -1,0 +1,24 @@
+{
+  "id": "org.neonforge.example",
+  "name": "NEONFORGE Original C Example",
+  "version": "0.1.0",
+  "api": 1,
+  "entry": "plugin.dll",
+  "capabilities": [
+    {
+      "name": "nf.events",
+      "version": 1,
+      "required": true
+    },
+    {
+      "name": "nf.services",
+      "version": 1,
+      "required": true
+    },
+    {
+      "name": "nf.settings",
+      "version": 1,
+      "required": true
+    }
+  ]
+}

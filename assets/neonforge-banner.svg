@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="title desc">
+  <title id="title">NEONFORGE Core</title>
+  <desc id="desc">One foundation. Build Night City. Original API, development SDK, Windows x64.</desc>
+  <rect width="1200" height="300" rx="16" fill="#0b1020"/>
+  <path d="M0 248H230L275 203H1200M880 0V44L926 90H1200" fill="none" stroke="#243047" stroke-width="2"/>
+  <path d="M64 208V88H91L155 171V88H182V208H155L91 125V208M203 208V88H285V113H230V137H277V162H230V208" fill="none" stroke="#39d6e8" stroke-width="8" stroke-linejoin="bevel"/>
+  <path d="M62 231H281" stroke="#ed57bf" stroke-width="4"/>
+  <text x="340" y="128" fill="#f2f6ff" font-family="Segoe UI,Arial,sans-serif" font-size="58" font-weight="700" letter-spacing="3">NEONFORGE</text>
+  <text x="342" y="164" fill="#39d6e8" font-family="Segoe UI,Arial,sans-serif" font-size="18" letter-spacing="6">CORE / MODDING PLATFORM</text>
+  <text x="342" y="211" fill="#c1cce0" font-family="Segoe UI,Arial,sans-serif" font-size="24">One foundation. Build Night City.</text>
+  <text x="342" y="266" fill="#93a3bf" font-family="Segoe UI,Arial,sans-serif" font-size="13" letter-spacing="2">ORIGINAL API   /   DEVELOPMENT SDK   /   WINDOWS x64</text>
+</svg>
