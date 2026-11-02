@@ -1,6 +1,6 @@
 # Native SDK contracts
 
-The header `include/neonforge/api.h` is usable from C and C++. The target is Windows x64. This is the first development ABI; API major is 1 and the initial runtime version is 0.1.0.
+The header `include/neonforge/api.h` is usable from C and C++. The target is Windows x64. API major remains 1; runtime version is 0.1.1. The performance update preserves the existing table layout and contracts.
 
 ## Negotiation
 
@@ -30,7 +30,11 @@ The host shutdown order is: close every context, run plugin stop callbacks in re
 
 Names use lower-case dotted identifiers. Event dispatch is stable in subscription order. A dispatch snapshots subscription identities: removal takes effect before a pending callback, while additions start on the next dispatch. Nested dispatch is limited to 16. A callback cannot release its own context while still executing.
 
+Routing looks up only the requested topic and reuses an immutable token snapshot until that topic changes. A nested emission observes registrations made before it starts; an already running outer emission keeps its original snapshot. Canonical registration lookup still skips removed callbacks before invocation.
+
 Task pumping snapshots the eligible queue. Tasks enqueued during the pump wait until the next pump. Cancellation and owner closing remove pending work. Pumping is non-reentrant. Current bounds: 1,024 contexts, 16,384 subscriptions, 4,096 queued tasks, 4,096 published services, 16,384 service leases; payloads/settings/JSON input are limited to 1 MiB.
+
+Pending tasks have links embedded in their canonically owned nodes. Cancellation detaches a node directly rather than scanning the queue; handle lookup still uses an ordered map. Pump selection detaches nodes before callbacks, so selected work can be cancelled safely. Bounded pump scratch storage is reused. These services remain main-thread only.
 
 Callback timing measures the execution interval of callbacks, including nested work. It is not total game-frame cost or proof of performance improvement. `stats` reports aggregate counters; `context_stats` attributes counts and callback time to one mod.
 
