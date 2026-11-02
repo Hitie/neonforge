@@ -7,7 +7,17 @@ namespace nf
 const Json::Object &Json::object() const { return std::get<Object>(value); }
 const Json::Array &Json::array() const { return std::get<Array>(value); }
 const std::string &Json::string() const { return std::get<std::string>(value); }
-double Json::number() const { return std::get<double>(value); }
+double Json::number() const
+{
+    if (auto n = std::get_if<Number>(&value))
+        return n->value;
+    return std::get<double>(value);
+}
+std::string_view Json::number_token() const
+{
+    auto n = std::get_if<Number>(&value);
+    return n && n->token ? std::string_view(*n->token) : std::string_view{};
+}
 bool Json::boolean() const { return std::get<bool>(value); }
 const Json &Json::at(std::string_view key) const { return object().at(std::string(key)); }
 const Json *Json::find(std::string_view key) const
@@ -64,6 +74,7 @@ struct Parser
 {
     std::string_view s;
     size_t p = 0;
+    bool exact_numbers = false;
     [[noreturn]] void fail(std::string why) const { throw ParseError(p, std::move(why)); }
     void ws()
     {
@@ -281,6 +292,9 @@ struct Parser
         auto [end, ec] = std::from_chars(s.data() + start, s.data() + p, n);
         if (ec != std::errc() || end != s.data() + p || !std::isfinite(n))
             fail("number outside finite range");
+        if (exact_numbers)
+            return Json(
+                Json::Number{n, std::make_shared<const std::string>(s.substr(start, p - start))});
         return Json(n);
     }
 };
@@ -320,13 +334,19 @@ void serialize(std::string &out, const Json &j, unsigned depth)
                 out += "null";
             else if constexpr (std::is_same_v<T, bool>)
                 out += v ? "true" : "false";
-            else if constexpr (std::is_same_v<T, double>)
+            else if constexpr (std::is_same_v<T, double> || std::is_same_v<T, Json::Number>)
             {
-                if (!std::isfinite(v))
+                double number;
+                if constexpr (std::is_same_v<T, double>)
+                    number = v;
+                else
+                    number = v.value;
+                if (!std::isfinite(number))
                     throw std::invalid_argument("nonfinite number");
                 char buf[64];
-                auto result = std::to_chars(buf, buf + sizeof(buf), v, std::chars_format::general,
-                                            std::numeric_limits<double>::max_digits10);
+                auto result =
+                    std::to_chars(buf, buf + sizeof(buf), number, std::chars_format::general,
+                                  std::numeric_limits<double>::max_digits10);
                 if (result.ec != std::errc())
                     throw std::invalid_argument("number serialization failed");
                 out.append(buf, result.ptr);
@@ -365,19 +385,22 @@ void serialize(std::string &out, const Json &j, unsigned depth)
         j.value);
 }
 } // namespace
-Json parse_json(std::string_view text)
+Json parse_with_numbers(std::string_view text, bool exact)
 {
     if (text.size() > 1048576)
         throw ParseError(0, "JSON exceeds 1 MiB");
     if (!valid_utf8(text))
         throw ParseError(0, "invalid UTF-8");
     Parser p{text};
+    p.exact_numbers = exact;
     auto out = p.value(0);
     p.ws();
     if (p.p != text.size())
         p.fail("trailing data");
     return out;
 }
+Json parse_json(std::string_view text) { return parse_with_numbers(text, false); }
+Json parse_json_exact(std::string_view text) { return parse_with_numbers(text, true); }
 std::string to_json(const Json &j)
 {
     std::string out;

@@ -26,6 +26,8 @@ Typed tests exercise exact numeric conversions, function signatures, caller-owne
 
 Script tests exercise per-mod isolation, quotas through protected module calls, OOM/result cleanup, exact typed integers, nested/self-removing callbacks, cancellation, 100 reload cycles and original SDK Lua demos. Mixed-entry tests check syntax preflight before native startup and attributed callback errors. Script benchmarks verify real work and cleanup without CI timing thresholds.
 
+Data tests verify full-width integers, compound/array domains, immutable snapshots, failed/stale batches, clone independence, provenance and retained-data budgets, moved-from handles and thread/lifetime checks. CLI and extracted-SDK tests run the actual original patch project and verify deterministic plans and diagnostics.
+
 These tests establish standalone behavior only. They do not establish engine reflection, resource loading, script compiler correctness, live reload of native modules, game performance or compatibility with other mod loaders.
 
 ## Review changes

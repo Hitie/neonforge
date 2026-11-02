@@ -45,7 +45,7 @@ class DistributionTests(unittest.TestCase):
         with zipfile.ZipFile(self.root / 'dist' / result['source']['name']) as source:
             paths = source.namelist()
             self.assertTrue(any(name.endswith('/src/kernel.cpp') for name in paths))
-            self.assertFalse(any('/build-' in name or '/data/' in name or name.endswith('PROGRESS.md') for name in paths))
+            self.assertFalse(any(name.split('/',1)[-1].startswith(('build-','build/','data/')) or name.endswith('PROGRESS.md') for name in paths))
 
     def test_extracted_sdk_benchmark_uses_the_packaged_runtime(self):
         result = package_sdk.build_distributions(SOURCE, BUILD, self.root / 'dist')
@@ -98,6 +98,26 @@ class DistributionTests(unittest.TestCase):
             path.write_text('fixture')
         selected = [p.relative_to(root).as_posix() for p in package_sdk.source_files(root)]
         self.assertEqual(selected, ['LICENSE', 'src/owned.cpp'])
+
+    def test_extracted_sdk_data_demo_has_exact_values_and_provenance(self):
+        result=package_sdk.build_distributions(SOURCE,BUILD,self.root/'dist')
+        with zipfile.ZipFile(self.root/'dist'/result['sdk']['name']) as archive:
+            archive.extractall(self.root/'extracted')
+        sdk=next((self.root/'extracted').iterdir())
+        binary=sdk/'runtime/nf_data.exe'
+        self.assertTrue(binary.is_file(),'offline data CLI missing from SDK')
+        project=sdk/'examples/data/original-items.json'
+        run=subprocess.run([str(binary),'apply',str(project)],capture_output=True,text=True,timeout=30)
+        self.assertEqual(run.returncode,0,run.stdout+run.stderr)
+        snapshot=json.loads(run.stdout)
+        self.assertEqual(snapshot['revision'],'3')
+        self.assertFalse(snapshot['engine_adapter_ready'])
+        self.assertEqual(snapshot['records']['Items.Custom']['fields']['identity']['value'],'18446744073709551615')
+        self.assertEqual(snapshot['records']['Items.Custom']['fields']['damage']['value'],'42')
+        preview=subprocess.run([str(binary),'plan',str(project)],capture_output=True,text=True,timeout=30)
+        self.assertEqual(preview.returncode,0,preview.stderr)
+        overwrites=json.loads(preview.stdout)['transactions'][2]['overwrites']
+        self.assertEqual(overwrites,[dict(record='Items.Custom',field='damage',previous_owner='org.neonforge.data.custom',owner='org.neonforge.data.balance',action='set')])
 
     def test_extracted_sdk_audit_runs_without_modifying_fixture(self):
         result=package_sdk.build_distributions(SOURCE,BUILD,self.root/'dist')
