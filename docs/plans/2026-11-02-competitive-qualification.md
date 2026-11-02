@@ -23,6 +23,19 @@ Documentation retrieved on 2 November 2026. Some pages were served from a 1 Nove
 
 The 0.1.1 microbenchmarks qualify an improvement over NEONFORGE 0.1.0 only. No reference framework has been beaten by a comparable test so far.
 
+## Public release candidates observed
+
+GitHub's latest-release endpoints reported these non-prerelease, non-draft releases on 2 November 2026. They are candidates for a later compatible baseline, not an assertion that this exact combination has been installed or tested. Download hashes, compatibility and release-note feature deltas must be checked before qualification. In particular, the redscript repository's default `1.0.x` development branch is not the stable release selected here.
+
+| Primary release source | Tag | Published UTC |
+| --- | --- | --- |
+| [psiberx/cp2077-archive-xl](https://github.com/psiberx/cp2077-archive-xl/releases/tag/v1.28.6) | v1.28.6 | 2026-10-29 |
+| [maximegmd/CyberEngineTweaks](https://github.com/maximegmd/CyberEngineTweaks/releases/tag/v1.38.1) | v1.38.1 | 2026-10-26 |
+| [psiberx/cp2077-tweak-xl](https://github.com/psiberx/cp2077-tweak-xl/releases/tag/v1.12.0) | v1.12.0 | 2026-10-25 |
+| [WopsS/RED4ext](https://github.com/wopss/RED4ext/releases/tag/v1.31.0) | v1.31.0 | 2026-10-24 |
+| [psiberx/cp2077-codeware](https://github.com/psiberx/cp2077-codeware/releases/tag/v1.21.2) | v1.21.2 | 2026-10-28 |
+| [jac3km4/redscript](https://github.com/jac3km4/redscript/releases/tag/v0.5.32) | v0.5.32 | 2026-10-22 |
+
 ## Completion gates
 
 1. **Coverage:** Expand every applicable roadmap group into named, observable acceptance cases. Record implemented, standalone-tested and game-tested status separately. Required missing game functionality blocks a parity or overall superiority claim.
