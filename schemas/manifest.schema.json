@@ -35,7 +35,7 @@
       "type": "string",
       "minLength": 5,
       "maxLength": 240,
-      "pattern": "\\.dll$",
+      "pattern": "\\.(dll|lua)$",
       "description": "Owned relative Windows-safe path; no traversal, device names, links or streams. Package ZIP names use forward slashes."
     },
     "requires": {

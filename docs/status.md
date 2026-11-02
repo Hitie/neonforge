@@ -1,6 +1,6 @@
 # Capability and evidence status
 
-Development SDK 0.1.2. The full project remains unfinished.
+Development SDK 0.1.3. The full project remains unfinished.
 
 | Area | Current state |
 | --- | --- |
@@ -16,7 +16,8 @@ Development SDK 0.1.2. The full project remains unfinished.
 | Windows WINMM export probe | System-library experiment; no game bootstrap qualification |
 | Original game-loadable bootstrap | Not implemented/qualified |
 | Engine lifecycle, native registration and reflection | Not implemented |
-| Lua/runtime observers/overlay | Not implemented |
+| Standalone Lua values/calls/events/tasks/settings/local modules/reload | Implemented and tested outside the game; see [scripting](scripting.md) |
+| Lua game observers/lifecycle/input/overlay | Not implemented |
 | Actual TweakDB edits | Not implemented |
 | Archive/resource/appearance/world/quest extensions | Not implemented |
 | Original compiler and game-script bytecode integration | Not implemented |

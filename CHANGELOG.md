@@ -1,5 +1,13 @@
 # Changes
 
+## 0.1.3 development SDK
+
+- Embedded, pinned Lua 5.5.1 with per-mod states, VM/memory limits and local text modules.
+- Original typed-call/export bindings, exact uint64 values, owned events/tasks, JSON settings and logs.
+- Unified native/Lua manifest ordering and syntax/query preflight before startup; attributed failures and safe teardown.
+- Stop-and-reload embedding API with 100-cycle cleanup coverage, original SDK Lua demos and workload benchmarks.
+- Lua MIT notices and complete pinned source included. Existing native and typed ABIs are unchanged. Game integration remains unavailable.
+
 ## 0.1.2 development SDK
 
 - Separately negotiated typed C API with exact 64-bit integers, finite floats, UTF-8 and byte spans.
