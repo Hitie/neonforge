@@ -20,8 +20,19 @@ $dest=Join-Path $PSScriptRoot $BuildDir
 New-Item -ItemType Directory -Path $dest -Force | Out-Null
 Push-Location $dest
 try {
-  $common=@('/nologo','/std:c++20','/EHsc','/W4','/permissive-','/utf-8','/MD','/O2',('/I'+$PSScriptRoot+'\src'),('/I'+$PSScriptRoot+'\include'))
+  $common=@('/nologo','/std:c++20','/EHsc','/W4','/permissive-','/utf-8','/MD','/O2',('/I'+$PSScriptRoot+'\src'),('/I'+$PSScriptRoot+'\include'),('/I'+$PSScriptRoot+'\third_party\lua'))
   $ccommon=@($common | Where-Object { $_ -ne '/std:c++20' })
+  & $pythonExe @pythonArgs ($PSScriptRoot+'\tools\verify_dependencies.py')
+  if($LASTEXITCODE){exit $LASTEXITCODE}
+  $luaSources=@(Get-ChildItem -LiteralPath ($PSScriptRoot+'\third_party\lua') -Filter '*.c' | Where-Object { $_.Name -notin @('lua.c','luac.c') })
+  $luaCommon=@($common | Where-Object { $_ -ne '/W4' })
+  & ($bin+'\cl.exe') @luaCommon '/W0' '/TP' '/c' @($luaSources.FullName)
+  if($LASTEXITCODE){exit $LASTEXITCODE}
+  $luaObjects=@($luaSources | ForEach-Object { $_.BaseName+'.obj' })
+  & ($bin+'\lib.exe') '/nologo' '/OUT:nf_lua.lib' @luaObjects
+  if($LASTEXITCODE){exit $LASTEXITCODE}
+  & ($bin+'\cl.exe') @common '/c' ($PSScriptRoot+'\src\script_host.cpp')
+  if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @common ($PSScriptRoot+'\src\json.cpp') ($PSScriptRoot+'\src\manifest.cpp') ($PSScriptRoot+'\tests\package_tests.cpp') '/Fe:nf_package_tests.exe'
   if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @common '/LD' ($PSScriptRoot+'\src\exports.cpp') ($PSScriptRoot+'\src\kernel.cpp') ($PSScriptRoot+'\src\json.cpp') ($PSScriptRoot+'\src\manifest.cpp') '/Fe:NeonForge.Core.dll'
@@ -36,7 +47,11 @@ try {
   if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @common '/DNF_BENCHMARK_RELEASE' ($PSScriptRoot+'\benchmarks\runtime_benchmark.cpp') ($PSScriptRoot+'\src\json.cpp') '/Fe:nf_benchmark.exe'
   if($LASTEXITCODE){exit $LASTEXITCODE}
-  & ($bin+'\cl.exe') @common ($PSScriptRoot+'\src\host.cpp') ($PSScriptRoot+'\src\json.cpp') ($PSScriptRoot+'\src\manifest.cpp') '/Fe:neonforge.exe'
+  & ($bin+'\cl.exe') @common ($PSScriptRoot+'\tests\script_tests.cpp') 'script_host.obj' 'json.obj' 'manifest.obj' 'nf_lua.lib' 'NeonForge.Core.lib' '/Fe:nf_script_tests.exe'
+  if($LASTEXITCODE){exit $LASTEXITCODE}
+  & ($bin+'\cl.exe') @common ($PSScriptRoot+'\benchmarks\script_benchmark.cpp') 'script_host.obj' 'json.obj' 'manifest.obj' 'nf_lua.lib' 'NeonForge.Core.lib' '/Fe:nf_script_benchmark.exe'
+  if($LASTEXITCODE){exit $LASTEXITCODE}
+  & ($bin+'\cl.exe') @common ($PSScriptRoot+'\src\host.cpp') ($PSScriptRoot+'\src\json.cpp') ($PSScriptRoot+'\src\manifest.cpp') 'script_host.obj' 'nf_lua.lib' '/Fe:neonforge.exe'
   if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @ccommon '/std:c11' '/LD' ($PSScriptRoot+'\examples\native\provider.c') '/Fe:nf_example.dll'
   if($LASTEXITCODE){exit $LASTEXITCODE}
@@ -60,11 +75,16 @@ try {
   if(-not $SkipTests){
     & .\nf_package_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_kernel_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
+    & .\nf_script_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_typed_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_typed_example.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_event_routes_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_plugin_abi_test.exe .\nf_example.dll .\nf_consumer.dll .\nf_generated.dll;if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\host_integration.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
+    & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\script_integration.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
+    & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\script_quotas_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
+    & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\dependency_tests.py');if($LASTEXITCODE){exit $LASTEXITCODE}
+    & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\script_benchmark_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\tool_tests.py');if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\probe_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\benchmark_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}

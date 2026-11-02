@@ -24,6 +24,8 @@ Package tests cover JSON, Unicode, malformed paths/manifests, semantic versions,
 
 Typed tests exercise exact numeric conversions, function signatures, caller-owned result storage, callback shutdown/mutation, nesting and resource limits. The SDK includes the typed C demo and an import library; distribution tests rebuild and run that example using only the extracted SDK.
 
+Script tests exercise per-mod isolation, quotas through protected module calls, OOM/result cleanup, exact typed integers, nested/self-removing callbacks, cancellation, 100 reload cycles and original SDK Lua demos. Mixed-entry tests check syntax preflight before native startup and attributed callback errors. Script benchmarks verify real work and cleanup without CI timing thresholds.
+
 These tests establish standalone behavior only. They do not establish engine reflection, resource loading, script compiler correctness, live reload of native modules, game performance or compatibility with other mod loaders.
 
 ## Review changes
@@ -32,4 +34,4 @@ Runtime and package regression tests cover API truncation, JSON numeric/size pre
 
 ## Dependency policy
 
-The current implementation uses the Windows API, C/C++ standard library and Python standard library. Windows/MSVC system components remain external requirements. No upstream mod framework code or headers are bundled. A later Lua/parser/decoder dependency must have pinned provenance and retained attribution before it enters the distribution.
+The original implementation uses the Windows API, C/C++ standard library and Python standard library. The host also embeds pinned Lua 5.5.1, built unmodified as C++ for exception unwinding; `tools/verify_dependencies.py` checks every vendored source/header hash. See [notices](../THIRD_PARTY_NOTICES.md). Windows/MSVC system components remain external requirements. No upstream mod framework code or headers are bundled. Later parser/decoder dependencies must also have pinned provenance and retained attribution before entering the distribution.

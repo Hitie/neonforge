@@ -149,8 +149,9 @@ Manifest parse_manifest(std::string_view text, std::filesystem::path directory)
         throw std::invalid_argument("invalid display name");
     if (m.api != 1)
         throw std::invalid_argument("unsupported API major");
-    if (!safe_relative_path(m.entry) || std::filesystem::path(m.entry).extension() != L".dll")
-        throw std::invalid_argument("entry must be an owned relative .dll path");
+    auto extension = std::filesystem::path(m.entry).extension();
+    if (!safe_relative_path(m.entry) || (extension != L".dll" && extension != L".lua"))
+        throw std::invalid_argument("entry must be an owned relative .dll or .lua path");
     m.before = ids(j.find("before"));
     m.after = ids(j.find("after"));
     if (auto deps = j.find("requires"))

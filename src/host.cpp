@@ -1,5 +1,6 @@
 #define NOMINMAX
 #include "manifest.hpp"
+#include "script_host.hpp"
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -135,6 +136,12 @@ nf::Json order_json(const std::vector<nf::Manifest> &mods, const std::vector<siz
         names.emplace_back(mods[i].id);
     return nf::Json(names);
 }
+auto host_capabilities()
+{
+    auto capabilities = nf::core_capabilities();
+    capabilities.emplace("nf.script.lua", 1);
+    return capabilities;
+}
 int run(const std::vector<nf::Manifest> &mods, const std::vector<size_t> &order,
         const std::filesystem::path &data, uint32_t ticks)
 {
@@ -143,10 +150,16 @@ int run(const std::vector<nf::Manifest> &mods, const std::vector<size_t> &order,
     auto get = reinterpret_cast<GetApi>(core.symbol("nf_get_api"));
     const nf_api *a = nullptr;
     check(get(1, sizeof(nf_api), &a), "runtime ABI negotiation");
+    using GetTyped = nf_status(NF_CALL *)(uint32_t, uint32_t, const nf_typed_api **);
+    const nf_typed_api *typed = nullptr;
+    check(reinterpret_cast<GetTyped>(core.symbol("nf_get_typed_api"))(1, sizeof(nf_typed_api),
+                                                                      &typed),
+          "typed ABI negotiation");
     auto root = utf8(std::filesystem::absolute(data));
     nf_runtime_options options{sizeof(options), 0, span(root)};
     nf_runtime *r = nullptr;
     check(a->runtime_create(&options, &r), "runtime creation");
+    auto scripts = std::make_unique<nf::ScriptHost>(a, typed, r);
     std::vector<Mod> loaded;
     loaded.reserve(order.size());
     nf_context host = 0;
@@ -158,11 +171,21 @@ int run(const std::vector<nf::Manifest> &mods, const std::vector<size_t> &order,
         for (auto i : order)
         {
             Mod m{&mods[i]};
-            check(a->context_create(r, span(mods[i].id), &m.context), "mod context", a, r);
+            if (path(mods[i].entry).extension() == L".dll")
+                check(a->context_create(r, span(mods[i].id), &m.context), "mod context", a, r);
             loaded.push_back(std::move(m));
         }
         for (auto &m : loaded)
         {
+            if (path(m.manifest->entry).extension() == L".lua")
+            {
+                bool prepared =
+                    scripts->prepare(m.manifest->id, m.manifest->directory, m.manifest->entry);
+                if (!prepared)
+                    throw std::runtime_error(scripts->error());
+                m.context = scripts->context(m.manifest->id);
+                continue;
+            }
             m.library = std::make_unique<Library>(m.manifest->directory / path(m.manifest->entry));
             auto query = reinterpret_cast<nf_plugin_query_fn>(m.library->symbol("nf_plugin_query"));
             m.start = reinterpret_cast<nf_plugin_start_fn>(m.library->symbol("nf_plugin_start"));
@@ -181,6 +204,13 @@ int run(const std::vector<nf::Manifest> &mods, const std::vector<size_t> &order,
         for (auto &m : loaded)
         {
             m.attempted = true;
+            if (path(m.manifest->entry).extension() == L".lua")
+            {
+                if (!scripts->start(m.manifest->id))
+                    throw std::runtime_error(scripts->error());
+                ++started;
+                continue;
+            }
             check(m.start(a, r, m.context, &m.lifecycle), "plugin start: " + m.manifest->id, a, r);
             if (m.lifecycle.struct_size != sizeof(m.lifecycle) || m.lifecycle.reserved)
                 throw std::runtime_error("plugin lifecycle ABI mismatch");
@@ -191,6 +221,8 @@ int run(const std::vector<nf::Manifest> &mods, const std::vector<size_t> &order,
         {
             uint32_t ran = 0;
             check(a->task_pump(r, 4096, &ran), "task dispatch", a, r);
+            if (!scripts->healthy())
+                throw std::runtime_error("script callback failed; see attributed runtime log");
         }
     }
     catch (const std::exception &e)
@@ -201,9 +233,11 @@ int run(const std::vector<nf::Manifest> &mods, const std::vector<size_t> &order,
     {
         failure = "plugin threw during its native entry point";
     }
+    if (!scripts->healthy())
+        failure = scripts->error();
     for (auto &m : loaded)
     {
-        auto status = a->context_close(r, m.context);
+        auto status = m.context ? a->context_close(r, m.context) : NF_OK;
         if (status != NF_OK && failure.empty())
             failure = "context close failed";
     }
@@ -211,6 +245,13 @@ int run(const std::vector<nf::Manifest> &mods, const std::vector<size_t> &order,
         a->context_close(r, host);
     for (auto i = loaded.rbegin(); i != loaded.rend(); ++i)
     {
+        if (path(i->manifest->entry).extension() == L".lua")
+        {
+            if (i->context)
+                scripts->unload(i->manifest->id);
+            i->context = 0;
+            continue;
+        }
         if (i->attempted && i->lifecycle.struct_size == sizeof(i->lifecycle) && i->lifecycle.stop)
         {
             try
@@ -224,9 +265,10 @@ int run(const std::vector<nf::Manifest> &mods, const std::vector<size_t> &order,
             }
         }
     }
+    scripts.reset();
     bool clean = true;
     for (auto &m : loaded)
-        if (a->context_release(r, m.context) != NF_OK)
+        if (m.context && a->context_release(r, m.context) != NF_OK)
             clean = false;
     if (host && a->context_release(r, host) != NF_OK)
         clean = false;
@@ -235,7 +277,7 @@ int run(const std::vector<nf::Manifest> &mods, const std::vector<size_t> &order,
     check(a->stats(r, &stats), "final statistics", a, r);
     nf::Json::Object report;
     report.emplace("product", nf::Json(std::string("NEONFORGE Core")));
-    report.emplace("version", nf::Json(std::string("0.1.2-dev.1")));
+    report.emplace("version", nf::Json(std::string("0.1.3-dev.1")));
     report.emplace("mode", nf::Json(std::string("standalone; engine services unavailable")));
     report.emplace("started", nf::Json(static_cast<double>(started)));
     report.emplace("load_order", order_json(mods, order));
@@ -275,13 +317,13 @@ int wmain(int argc, wchar_t **wide)
             args.push_back(utf8(std::filesystem::path(wide[i])));
         if (argc == 2 && args[1] == "--version")
         {
-            std::cout << "NEONFORGE Core 0.1.2-dev.1 (standalone SDK candidate)\n";
+            std::cout << "NEONFORGE Core 0.1.3-dev.1 (standalone SDK candidate)\n";
             return 0;
         }
         if (argc == 2 && args[1] == "capabilities")
         {
             nf::Json::Object c;
-            for (auto &[n, v] : nf::core_capabilities())
+            for (auto &[n, v] : host_capabilities())
                 c.emplace(n, nf::Json(static_cast<double>(v)));
             nf::Json::Object out;
             out.emplace("implemented", nf::Json(c));
@@ -298,7 +340,7 @@ int wmain(int argc, wchar_t **wide)
             return 2;
         }
         auto mods = discover(path(args[2]));
-        auto order = nf::resolve(mods, nf::core_capabilities());
+        auto order = nf::resolve(mods, host_capabilities());
         if (args[1] == "validate")
         {
             if (argc != 3)

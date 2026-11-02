@@ -12,11 +12,12 @@
 
 An original Cyberpunk 2077 modding-platform project with a new API for mod authors. The long-term target brings native plugins, scripting, database edits, resources, game services and developer tools into one package.
 
-**Current build: 0.1.2 development SDK.** The standalone native runtime and developer tools work. Game hooks, Lua, TweakDB, resource extensions, the game-script compiler and game UI are not implemented yet. This build does not replace ArchiveXL, Cyber Engine Tweaks, TweakXL, RED4ext, Codeware or redscript. It has not been tested inside Cyberpunk.
+**Current build: 0.1.3 development SDK.** The standalone native runtime, Lua layer and developer tools work. Game hooks, TweakDB, resource extensions, the game-script compiler and game UI are not implemented yet. This build does not replace ArchiveXL, Cyber Engine Tweaks, TweakXL, RED4ext, Codeware or redscript. It has not been tested inside Cyberpunk.
 
 ## Working now
 
 - Typed values, signature lookup and checked native calls with caller-owned results; see [typed API](docs/typed-calls.md).
+- Isolated Lua states with typed calls, owned callbacks, local modules and bounded reloads; see [scripting](docs/scripting.md).
 - Native Windows x64 DLL host and C ABI, with C and C++ example mods.
 - Strict manifests, semantic versions, dependency ordering and unavailable-capability checks before plugin startup.
 - Owned callbacks and deferred tasks, safe callback-list mutation, cancellation and closing/release states.
@@ -39,7 +40,7 @@ Open [Actions](https://github.com/Hitie/neonforge/actions/workflows/windows.yml)
 .\runtime\neonforge.exe run .\examples\mods .\data --ticks 3
 ```
 
-Run `Run-Typed-Demo.cmd` for the C signature-lookup and typed-call example.
+Run `Run-Typed-Demo.cmd` for the C signature-lookup and typed-call example, or `Run-Lua-Demo.cmd` for the original Lua provider/consumer packages.
 
 The original provider and consumer plugins exchange a versioned math service, receive a ready event, run a deferred task and persist results. This runs in a standalone process. Do not copy this SDK candidate over your game loaders.
 
@@ -57,7 +58,7 @@ ctest --test-dir build -C Release --output-on-failure
 
 ## Original implementation and compatibility
 
-NEONFORGE uses an original API. Existing mods will need porting; unchanged compatibility with the six reference frameworks is not promised. No framework implementation, SDK header, game executable, game script blob or game asset is included. Ordinary infrastructure dependencies will retain their own notices if added. The current source uses C/C++, the Windows API and Python's standard library.
+NEONFORGE uses an original API. Existing mods will need porting; unchanged compatibility with the six reference frameworks is not promised. No framework implementation, SDK header, game executable, game script blob or game asset is included. Ordinary infrastructure dependencies will retain their own notices if added. The original adapter uses C/C++, the Windows API and Python's standard library, with pinned Lua 5.5.1 embedded as an attributed infrastructure dependency. See [third-party notices](THIRD_PARTY_NOTICES.md).
 
 No claim of being faster or more compatible than every existing core is made from standalone tests. Game support will be published per feature, exact executable and test scenario.
 

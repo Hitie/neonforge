@@ -1,0 +1,1 @@
+{"id":"org.neonforge.lua.consumer","name":"NEONFORGE Lua Consumer","version":"0.1.0","api":1,"entry":"init.lua","requires":[{"id":"org.neonforge.lua.provider","min":"0.1.0","max_exclusive":"1.0.0"}],"capabilities":[{"name":"nf.script.lua","version":1,"required":true}]}
