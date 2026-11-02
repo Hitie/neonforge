@@ -8,8 +8,10 @@ namespace nf
 const std::map<std::string, uint32_t, std::less<>> &core_capabilities()
 {
     static const std::map<std::string, uint32_t, std::less<>> c = {
-        {"nf.core", 1},     {"nf.events", 1},   {"nf.tasks", 1},
-        {"nf.services", 1}, {"nf.settings", 1}, {"nf.diagnostics", 1}};
+        {"nf.core", 1},     {"nf.events", 1},
+        {"nf.tasks", 1},    {"nf.services", 1},
+        {"nf.settings", 1}, {"nf.diagnostics", 1},
+        {"nf.values", 1},   {"nf.reflection.functions", 1}};
     return c;
 }
 Version Version::parse(std::string_view text)

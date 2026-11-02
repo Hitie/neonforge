@@ -61,6 +61,35 @@ class DistributionTests(unittest.TestCase):
         self.assertEqual(len(report['cases']), 9)
         self.assertEqual(report['artifacts']['runtime_sha256'], hashlib.sha256((sdk / 'runtime/NeonForge.Core.dll').read_bytes()).hexdigest())
 
+    def test_extracted_typed_c_demo_runs_and_persists_its_result(self):
+        result=package_sdk.build_distributions(SOURCE,BUILD,self.root/'dist')
+        with zipfile.ZipFile(self.root/'dist'/result['sdk']['name']) as archive:
+            archive.extractall(self.root/'extracted')
+        sdk=next((self.root/'extracted').iterdir())
+        demo=sdk/'runtime/nf_typed_example.exe'
+        self.assertTrue(demo.exists(),'typed C demo binary missing from SDK')
+        self.assertTrue((sdk/'include/neonforge/typed.h').exists())
+        self.assertTrue((sdk/'lib/NeonForge.Core.lib').read_bytes().startswith(b'!<arch>\n'))
+        run=subprocess.run([str(demo)],cwd=sdk,capture_output=True,text=True,timeout=30)
+        self.assertEqual(run.returncode,0,run.stderr+run.stdout)
+        self.assertEqual(json.loads(run.stdout)['answer'],42)
+        saved=sdk/'data/typed-demo/settings/org.neonforge.typed.consumer/result.json'
+        self.assertEqual(json.loads(saved.read_text())['answer'],42)
+        project=self.root/'typed-source'
+        project.mkdir()
+        (project/'CMakeLists.txt').write_text('cmake_minimum_required(VERSION 3.25)\nproject(TypedExample LANGUAGES C)\nadd_executable(typed "'+(sdk/'examples/native/typed_calls.c').as_posix()+'")\ntarget_include_directories(typed PRIVATE "'+(sdk/'include').as_posix()+'")\ntarget_link_libraries(typed PRIVATE "'+(sdk/'lib/NeonForge.Core.lib').as_posix()+'")\n')
+        for command in [
+            ['cmake','-S',str(project),'-B',str(project/'build'),'-A','x64'],
+            ['cmake','--build',str(project/'build'),'--config','Release'],
+        ]:
+            built=subprocess.run(command,capture_output=True,text=True,timeout=120)
+            self.assertEqual(built.returncode,0,built.stdout+built.stderr)
+        executable=project/'build/Release/typed.exe'
+        shutil.copy2(sdk/'runtime/NeonForge.Core.dll',executable.parent/'NeonForge.Core.dll')
+        run=subprocess.run([str(executable)],cwd=project,capture_output=True,text=True,timeout=30)
+        self.assertEqual(run.returncode,0,run.stdout+run.stderr)
+        self.assertEqual(json.loads(run.stdout)['answer'],42)
+
     def test_source_export_excludes_private_and_build_files(self):
         root = self.root / 'source'
         for name in ['src/owned.cpp', 'LICENSE', 'build/private.cpp', 'data/save.json', 'PROGRESS.md', 'game-file-inventory.csv', 'tools/__pycache__/secret.pyc', '.github/private-key']:

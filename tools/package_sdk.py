@@ -7,7 +7,7 @@ import struct
 import zipfile
 from pathlib import Path
 
-VERSION = '0.1.1-dev.1'
+VERSION = '0.1.2-dev.1'
 ROOT_FILES = {'.clang-format', '.gitignore', 'CMakeLists.txt', 'build.ps1', 'README.md', 'CHANGELOG.md', 'LICENSE', 'CONTRIBUTING.md', 'SECURITY.md', '.github/CODEOWNERS', 'benchmarks/results/baseline.json', 'benchmarks/results/candidate.json'}
 DIRECTORIES = {
     'src': {'.cpp', '.hpp', '.h'},
@@ -118,7 +118,12 @@ def _checksums(entries):
 
 def build_distributions(source, build, output):
     source, build, output = Path(source).resolve(), Path(build).resolve(), Path(output).resolve()
-    binaries = {name: _native(build / name) for name in ['neonforge.exe', 'NeonForge.Core.dll', 'nf_example.dll', 'nf_consumer.dll', 'nf_winmm_probe.exe', 'nf_benchmark.exe']}
+    binaries = {name: _native(build / name) for name in ['neonforge.exe', 'NeonForge.Core.dll', 'nf_example.dll', 'nf_consumer.dll', 'nf_winmm_probe.exe', 'nf_benchmark.exe', 'nf_typed_example.exe']}
+    import_library = build / 'NeonForge.Core.lib'
+    _regular(import_library)
+    library_data = import_library.read_bytes()
+    if not library_data.startswith(b'!<arch>\n'):
+        raise PackageError('Invalid native import library: ' + str(import_library))
     original = {}
     for path in source_files(source):
         _export_path(source, path)
@@ -129,6 +134,8 @@ def build_distributions(source, build, output):
     sdk = {
         'runtime/neonforge.exe': binaries['neonforge.exe'],
         'runtime/NeonForge.Core.dll': binaries['NeonForge.Core.dll'],
+        'runtime/nf_typed_example.exe': binaries['nf_typed_example.exe'],
+        'lib/NeonForge.Core.lib': library_data,
         'examples/mods/org.neonforge.example/plugin.dll': binaries['nf_example.dll'],
         'examples/mods/org.neonforge.consumer/plugin.dll': binaries['nf_consumer.dll'],
         'examples/mods/org.neonforge.example/manifest.json': original['examples/manifests/provider.json'],
@@ -152,6 +159,8 @@ This is a development SDK, not an installed Cyberpunk mod or a replacement for t
 
 Extract the complete directory and double-click Run-Demo.cmd. The original C and C++ plugins exchange a service, receive an event, execute a deferred task and persist their results under data/. No game installation is required. Windows x64 and the Microsoft Visual C++ x64 runtime are required; Python is needed only for tools/forge.py.
 
+Run-Typed-Demo.cmd demonstrates signature lookup and typed native invocation from C, preserving its result under data/typed-demo/. See docs/typed-calls.md for ownership, limits and build instructions using lib/NeonForge.Core.lib.
+
 Commands:
 
     runtime\\neonforge.exe validate examples\\mods
@@ -162,6 +171,7 @@ SDK headers are under include/ and example source is under examples/native/. Set
 SHA256SUMS.txt verifies every other file in this package. Standalone tests do not establish in-game functionality or performance.
 '''.encode('utf-8')
     sdk['Run-Demo.cmd'] = b'@echo off\r\nsetlocal\r\npushd "%~dp0"\r\n"runtime\\neonforge.exe" run "examples\\mods" "data" --ticks 3\r\nset "nf_result=%ERRORLEVEL%"\r\necho.\r\nif not "%~1"=="--no-pause" pause\r\npopd\r\nexit /b %nf_result%\r\n'
+    sdk['Run-Typed-Demo.cmd'] = b'@echo off\r\nsetlocal\r\npushd "%~dp0"\r\n"runtime\\nf_typed_example.exe"\r\nset "nf_result=%ERRORLEVEL%"\r\necho.\r\nif not "%~1"=="--no-pause" pause\r\npopd\r\nexit /b %nf_result%\r\n'
     original['SHA256SUMS.txt'] = _checksums(original)
     sdk['SHA256SUMS.txt'] = _checksums(sdk)
     output.mkdir(parents=True, exist_ok=True)
