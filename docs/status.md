@@ -1,6 +1,6 @@
 # Capability and evidence status
 
-Development SDK 0.1.3. The full project remains unfinished.
+Development SDK 0.1.4. The full project remains unfinished.
 
 | Area | Current state |
 | --- | --- |
@@ -29,7 +29,9 @@ Every future capability must identify its implementation, negative/lifecycle tes
 
 ## Next integration gate
 
-Qualify a complete original bootstrap, demonstrate safe initialization timing and verify the first engine lifecycle/native call on an isolated candidate profile. Only then enable the corresponding adapter capability. Existing game loaders and locally modified frameworks must be preserved. The SDK candidate is intended for standalone developer evaluation.
+Complete the [offline readiness plan](plans/2026-11-03-offline-readiness.md) before live integration. Read-only investigation of the user's fresh installation is authorized for identity, format and type research. The next implementation priority is expanded values and the original transactional database model.
+
+After that offline gate, qualify a complete original bootstrap, demonstrate safe initialization timing and verify the first engine lifecycle/native call on an isolated candidate profile. Only then enable the corresponding adapter capability. The SDK candidate remains intended for standalone developer evaluation.
 
 ## Benchmarking
 

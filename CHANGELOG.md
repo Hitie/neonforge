@@ -1,5 +1,13 @@
 # Changes
 
+## 0.1.4 development SDK
+
+- Read-only full-file SHA-256 audit with visible traversal/read/change errors and known loader markers.
+- Outside-game atomic report output preserves game files even when an existing report path is hard-linked to them.
+- Audit tool included in SDK exports, with original filesystem and extracted-package regression tests.
+- Explicit offline-readiness gate before live integration; fresh-install identity rechecked against the existing 2.5 baseline.
+- Native and typed ABI headers unchanged. Expanded database types and engine integration remain pending.
+
 ## 0.1.3 development SDK
 
 - Embedded, pinned Lua 5.5.1 with per-mod states, VM/memory limits and local text modules.
