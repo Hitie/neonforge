@@ -339,6 +339,150 @@ TEST(expired_runtime_handles_never_revalidate)
         expired.push_back(current);
     }
 }
+TEST(nested_event_routes_keep_outer_snapshot_and_refresh_inner_snapshot)
+{
+    Fixture f;
+    struct State
+    {
+        Fixture *f;
+        nf_token removed = 0;
+        bool nested = false;
+        std::vector<int> calls;
+    } st{&f};
+    auto added =
+        +[](nf_context, const nf_event *, void *u) { static_cast<State *>(u)->calls.push_back(3); };
+    auto first = +[](nf_context c, const nf_event *, void *u)
+    {
+        auto &x = *static_cast<State *>(u);
+        x.calls.push_back(x.nested ? 2 : 1);
+        if (!x.nested)
+        {
+            x.nested = true;
+            CHECK(api->event_unsubscribe(x.f->r, c, x.removed) == NF_OK);
+            nf_token token = 0;
+            auto next = +[](nf_context, const nf_event *, void *v)
+            { static_cast<State *>(v)->calls.push_back(3); };
+            CHECK(api->event_subscribe(x.f->r, c, s("test.indexed"), next, &x, &token) == NF_OK);
+            CHECK(api->event_emit(x.f->r, x.f->b, s("test.indexed"), {}) == NF_OK);
+        }
+    };
+    nf_token token = 0;
+    CHECK(api->event_subscribe(f.r, f.a, s("test.indexed"), first, &st, &token) == NF_OK);
+    CHECK(api->event_subscribe(f.r, f.a, s("test.indexed"), added, &st, &st.removed) == NF_OK);
+    CHECK(api->event_emit(f.r, f.b, s("test.indexed"), {}) == NF_OK);
+    CHECK((st.calls == std::vector<int>{1, 2, 3}));
+    st.calls.clear();
+    CHECK(api->event_emit(f.r, f.b, s("test.indexed"), {}) == NF_OK);
+    CHECK((st.calls == std::vector<int>{2, 3}));
+}
+TEST(closing_a_listener_owner_during_dispatch_removes_its_routes)
+{
+    Fixture f;
+    struct State
+    {
+        Fixture *f;
+        int removed = 0;
+    } st{&f};
+    auto close = +[](nf_context c, const nf_event *, void *u)
+    {
+        auto &x = *static_cast<State *>(u);
+        CHECK(api->context_close(x.f->r, c) == NF_OK);
+        CHECK(api->context_release(x.f->r, c) == NF_E_BUSY);
+    };
+    nf_token token = 0;
+    CHECK(api->event_subscribe(f.r, f.a, s("test.closing"), close, &st, &token) == NF_OK);
+    CHECK(api->event_subscribe(f.r, f.a, s("test.closing"), count, &st.removed, &token) == NF_OK);
+    CHECK(api->event_emit(f.r, f.b, s("test.closing"), {}) == NF_OK);
+    CHECK(st.removed == 0 && f.stats().subscriptions == 0);
+    CHECK(api->context_release(f.r, f.a) == NF_OK);
+    f.a = 0;
+    CHECK(api->event_emit(f.r, f.b, s("test.closing"), {}) == NF_OK);
+}
+TEST(pump_can_cancel_selected_tasks_and_defers_new_work)
+{
+    Fixture f;
+    struct State
+    {
+        Fixture *f;
+        nf_token selected = 0;
+        int count = 0;
+    } st{&f};
+    auto first = +[](nf_context c, void *u)
+    {
+        auto &x = *static_cast<State *>(u);
+        CHECK(api->task_cancel(x.f->r, c, x.selected) == NF_OK);
+        nf_token token = 0;
+        CHECK(api->task_enqueue(x.f->r, c, task_count, &x.count, &token) == NF_OK);
+        uint32_t ran = 99;
+        CHECK(api->task_pump(x.f->r, 1, &ran) == NF_E_STATE && ran == 0);
+    };
+    nf_token token = 0;
+    CHECK(api->task_enqueue(f.r, f.a, first, &st, &token) == NF_OK);
+    CHECK(api->task_enqueue(f.r, f.a, task_count, &st.count, &st.selected) == NF_OK);
+    uint32_t ran = 0;
+    CHECK(api->task_pump(f.r, 2, &ran) == NF_OK && ran == 1);
+    CHECK(st.count == 0 && f.stats().queued_tasks == 1);
+    CHECK(api->task_pump(f.r, 2, &ran) == NF_OK && ran == 1);
+    CHECK(st.count == 1 && f.stats().queued_tasks == 0);
+}
+TEST(pump_owner_cleanup_removes_selected_and_queued_tasks)
+{
+    Fixture f;
+    struct State
+    {
+        Fixture *f;
+        int count = 0;
+    } st{&f};
+    auto first = +[](nf_context, void *u)
+    {
+        auto &x = *static_cast<State *>(u);
+        CHECK(api->context_close(x.f->r, x.f->b) == NF_OK);
+        CHECK(api->context_release(x.f->r, x.f->b) == NF_OK);
+        x.f->b = 0;
+    };
+    nf_token token = 0;
+    CHECK(api->task_enqueue(f.r, f.a, first, &st, &token) == NF_OK);
+    for (int i = 0; i < 4; ++i)
+        CHECK(api->task_enqueue(f.r, f.b, task_count, &st.count, &token) == NF_OK);
+    uint32_t ran = 0;
+    CHECK(api->task_pump(f.r, 3, &ran) == NF_OK && ran == 1);
+    CHECK(st.count == 0 && f.stats().queued_tasks == 0);
+    CHECK(api->task_pump(f.r, 4096, &ran) == NF_OK && ran == 0);
+}
+TEST(queue_churn_preserves_fifo_and_full_capacity)
+{
+    Fixture f;
+    int called = 0;
+    nf_token token = 0;
+    for (int i = 0; i < 20000; ++i)
+    {
+        CHECK(api->task_enqueue(f.r, f.a, task_count, &called, &token) == NF_OK);
+        CHECK(api->task_cancel(f.r, f.a, token) == NF_OK);
+    }
+    std::vector<int> seen;
+    struct Item
+    {
+        std::vector<int> *seen;
+        int value;
+    } items[4096];
+    auto append = +[](nf_context, void *u)
+    {
+        auto &item = *static_cast<Item *>(u);
+        item.seen->push_back(item.value);
+    };
+    for (int i = 0; i < 4096; ++i)
+    {
+        items[i] = {&seen, i};
+        CHECK(api->task_enqueue(f.r, f.a, append, &items[i], &token) == NF_OK);
+    }
+    CHECK(api->task_enqueue(f.r, f.a, task_count, &called, &token) == NF_E_LIMIT);
+    uint32_t ran = 0;
+    CHECK(api->task_pump(f.r, 4096, &ran) == NF_OK && ran == 4096);
+    CHECK(called == 0 && seen.size() == 4096);
+    for (int i = 0; i < 4096; ++i)
+        CHECK(seen[static_cast<size_t>(i)] == i);
+    CHECK(f.stats().queued_tasks == 0);
+}
 int main()
 {
     if (nf_get_api(1, sizeof(nf_api), &api) != NF_OK)

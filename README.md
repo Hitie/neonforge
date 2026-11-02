@@ -12,7 +12,7 @@
 
 An original Cyberpunk 2077 modding-platform project with a new API for mod authors. The long-term target brings native plugins, scripting, database edits, resources, game services and developer tools into one package.
 
-**Current build: 0.1.0 development SDK.** The standalone native runtime and developer tools work. Game hooks, Lua, TweakDB, resource extensions, the game-script compiler and game UI are not implemented yet. This build does not replace ArchiveXL, Cyber Engine Tweaks, TweakXL, RED4ext, Codeware or redscript. It has not been tested inside Cyberpunk.
+**Current build: 0.1.1 development SDK.** The standalone native runtime and developer tools work. Game hooks, Lua, TweakDB, resource extensions, the game-script compiler and game UI are not implemented yet. This build does not replace ArchiveXL, Cyber Engine Tweaks, TweakXL, RED4ext, Codeware or redscript. It has not been tested inside Cyberpunk.
 
 ## Working now
 
@@ -22,6 +22,7 @@ An original Cyberpunk 2077 modding-platform project with a new API for mod autho
 - Versioned services with explicit leases that prevent providers from unloading while referenced.
 - Exact JSON settings preservation, atomic replacement and per-mod storage.
 - Bounded structured logs, callback timings, per-mod resource counts and error counters.
+- Indexed event routing and direct task cancellation, with a real-DLL [performance benchmark](docs/performance.md).
 - Package inspection, dry-run installation, ownership receipts, modified-file preservation and rollback after ordinary I/O failures.
 - Versioned settings migration, native project generation and exact-build diagnostics.
 - A Windows system-library probe for future bootstrap work. It is not a game bootstrap.

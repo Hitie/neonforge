@@ -1,5 +1,13 @@
 # Changes
 
+## 0.1.1 development SDK
+
+- Per-topic event routing with cached immutable snapshots; unrelated topics are not scanned on each emission.
+- Direct task queue removal and reusable pump scratch storage, preserving FIFO, cancellation and owner cleanup.
+- Real-DLL benchmarks with verified workload counts, raw samples, artifact identities and same-workload comparisons.
+- Additional nested-dispatch, selected-task cancellation, owner cleanup, queue churn and extracted-benchmark coverage.
+- ABI 1 is unchanged. Game integration remains unfinished.
+
 ## 0.1.0 development SDK
 
 - Original native runtime, C ABI, plugin host and C/C++ examples.

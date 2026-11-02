@@ -1,11 +1,11 @@
 #define NOMINMAX
 #include "kernel.hpp"
+#include "event_routes.hpp"
 #include "manifest.hpp"
 #include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstring>
-#include <deque>
 #include <fstream>
 #include <mutex>
 #include <set>
@@ -34,6 +34,9 @@ struct Task
     nf_context owner;
     nf_task_fn fn;
     void *user;
+    nf_token token;
+    Task *previous = nullptr, *next = nullptr;
+    bool queued = false;
 };
 struct Service
 {
@@ -142,8 +145,11 @@ struct nf_runtime
     std::filesystem::path root;
     std::map<nf_context, nf::Context> contexts;
     std::map<nf_token, nf::Subscription> subscriptions;
+    nf::EventRoutes event_routes;
     std::map<nf_token, nf::Task> tasks;
-    std::deque<nf_token> queue;
+    nf::Task *queue_head = nullptr, *queue_tail = nullptr;
+    uint32_t queue_size = 0;
+    std::vector<nf_token> task_snapshot;
     std::map<nf_token, nf::Service> services;
     std::map<nf_token, nf::Lease> leases;
     std::string error;
@@ -307,6 +313,22 @@ void erase_lease(nf_runtime *r, std::map<nf_token, Lease>::iterator i)
         --provider->second.pins;
     r->leases.erase(i);
 }
+void unlink_task(nf_runtime *r, Task &task)
+{
+    if (!task.queued)
+        return;
+    if (task.previous)
+        task.previous->next = task.next;
+    else
+        r->queue_head = task.next;
+    if (task.next)
+        task.next->previous = task.previous;
+    else
+        r->queue_tail = task.previous;
+    task.previous = task.next = nullptr;
+    task.queued = false;
+    --r->queue_size;
+}
 nf_status NF_CALL context_close(nf_runtime *r, nf_context c)
 {
     return guard(r,
@@ -316,9 +338,22 @@ nf_status NF_CALL context_close(nf_runtime *r, nf_context c)
                      if (owner.closing)
                          return NF_OK;
                      owner.closing = true;
-                     std::erase_if(r->subscriptions, [&](auto &v) { return v.second.owner == c; });
-                     std::erase_if(r->tasks, [&](auto &v) { return v.second.owner == c; });
-                     std::erase_if(r->queue, [&](auto t) { return !r->tasks.contains(t); });
+                     for (auto i = r->subscriptions.begin(); i != r->subscriptions.end();)
+                         if (i->second.owner == c)
+                         {
+                             r->event_routes.remove(i->second.name, i->first);
+                             i = r->subscriptions.erase(i);
+                         }
+                         else
+                             ++i;
+                     for (auto i = r->tasks.begin(); i != r->tasks.end();)
+                         if (i->second.owner == c)
+                         {
+                             unlink_task(r, i->second);
+                             i = r->tasks.erase(i);
+                         }
+                         else
+                             ++i;
                      for (auto &[t, s] : r->services)
                      {
                          (void)t;
@@ -383,6 +418,15 @@ nf_status NF_CALL subscribe(nf_runtime *r, nf_context c, nf_str event, nf_event_
                      auto n = name(event);
                      auto t = token();
                      r->subscriptions.emplace(t, Subscription{c, n, fn, user});
+                     try
+                     {
+                         r->event_routes.add(n, t);
+                     }
+                     catch (...)
+                     {
+                         r->subscriptions.erase(t);
+                         throw;
+                     }
                      *out = t;
                      return NF_OK;
                  });
@@ -398,6 +442,7 @@ nf_status NF_CALL unsubscribe(nf_runtime *r, nf_context c, nf_token t)
                          return NF_E_HANDLE;
                      if (i->second.owner != c)
                          return NF_E_OWNER;
+                     r->event_routes.remove(i->second.name, t);
                      r->subscriptions.erase(i);
                      return NF_OK;
                  });
@@ -446,19 +491,20 @@ nf_status NF_CALL emit(nf_runtime *r, nf_context c, nf_str event, nf_bytes paylo
                          Depth(unsigned &x) : n(x) { ++n; }
                          ~Depth() { --n; }
                      } depth(r->dispatch_depth);
-                     std::vector<nf_token> snapshot;
-                     for (auto &[t, sub] : r->subscriptions)
-                         if (sub.name == n)
-                             snapshot.push_back(t);
+                     auto snapshot = r->event_routes.snapshot(n);
+                     if (!snapshot)
+                         return NF_OK;
                      nf_event e{span(n), payload, c};
                      bool ok = true;
-                     for (auto t : snapshot)
+                     for (auto t : *snapshot)
                      {
                          auto i = r->subscriptions.find(t);
                          if (i == r->subscriptions.end())
                              continue;
-                         auto sub = i->second;
-                         if (!invoke(r, sub.owner, [&] { sub.fn(sub.owner, &e, sub.user); }))
+                         auto owner = i->second.owner;
+                         auto fn = i->second.fn;
+                         auto user = i->second.user;
+                         if (!invoke(r, owner, [&] { fn(owner, &e, user); }))
                              ok = false;
                      }
                      return ok ? NF_OK : NF_E_CALLBACK;
@@ -477,8 +523,15 @@ nf_status NF_CALL enqueue(nf_runtime *r, nf_context c, nf_task_fn fn, void *user
                      if (r->tasks.size() >= 4096)
                          fail(NF_E_LIMIT, "task limit");
                      auto t = token();
-                     r->tasks.emplace(t, Task{c, fn, user});
-                     r->queue.push_back(t);
+                     auto &task = r->tasks.emplace(t, Task{c, fn, user, t}).first->second;
+                     task.previous = r->queue_tail;
+                     task.queued = true;
+                     if (r->queue_tail)
+                         r->queue_tail->next = &task;
+                     else
+                         r->queue_head = &task;
+                     r->queue_tail = &task;
+                     ++r->queue_size;
                      *out = t;
                      return NF_OK;
                  });
@@ -494,8 +547,8 @@ nf_status NF_CALL cancel(nf_runtime *r, nf_context c, nf_token t)
                          return NF_E_HANDLE;
                      if (i->second.owner != c)
                          return NF_E_OWNER;
+                     unlink_task(r, i->second);
                      r->tasks.erase(i);
-                     std::erase(r->queue, t);
                      return NF_OK;
                  });
 }
@@ -516,11 +569,14 @@ nf_status NF_CALL pump(nf_runtime *r, uint32_t maximum, uint32_t *ran)
                          Pump(bool &x) : v(x) { v = true; }
                          ~Pump() { v = false; }
                      } p(r->pumping);
-                     std::vector<nf_token> snapshot;
-                     for (size_t i = 0, n = std::min<size_t>(maximum, r->queue.size()); i < n; ++i)
+                     auto &snapshot = r->task_snapshot;
+                     snapshot.clear();
+                     snapshot.reserve(maximum);
+                     for (size_t i = 0, n = std::min<size_t>(maximum, r->queue_size); i < n; ++i)
                      {
-                         snapshot.push_back(r->queue.front());
-                         r->queue.pop_front();
+                         auto &task = *r->queue_head;
+                         snapshot.push_back(task.token);
+                         unlink_task(r, task);
                      }
                      bool ok = true;
                      for (auto t : snapshot)
@@ -825,7 +881,7 @@ const nf_api &kernel_api()
                                NF_ABI_VERSION,
                                0,
                                1,
-                               0,
+                               1,
                                0,
                                create,
                                destroy,
