@@ -28,6 +28,10 @@ try {
   if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @common ($PSScriptRoot+'\tests\kernel_tests.cpp') 'NeonForge.Core.lib' '/Fe:nf_kernel_tests.exe'
   if($LASTEXITCODE){exit $LASTEXITCODE}
+  & ($bin+'\cl.exe') @common ($PSScriptRoot+'\tests\typed_tests.cpp') 'NeonForge.Core.lib' '/Fe:nf_typed_tests.exe'
+  if($LASTEXITCODE){exit $LASTEXITCODE}
+  & ($bin+'\cl.exe') @ccommon '/std:c11' ($PSScriptRoot+'\examples\native\typed_calls.c') 'NeonForge.Core.lib' '/Fe:nf_typed_example.exe'
+  if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @common ($PSScriptRoot+'\tests\event_routes_test.cpp') '/Fe:nf_event_routes_tests.exe'
   if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @common '/DNF_BENCHMARK_RELEASE' ($PSScriptRoot+'\benchmarks\runtime_benchmark.cpp') ($PSScriptRoot+'\src\json.cpp') '/Fe:nf_benchmark.exe'
@@ -56,6 +60,8 @@ try {
   if(-not $SkipTests){
     & .\nf_package_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_kernel_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
+    & .\nf_typed_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
+    & .\nf_typed_example.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_event_routes_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_plugin_abi_test.exe .\nf_example.dll .\nf_consumer.dll .\nf_generated.dll;if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\host_integration.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}

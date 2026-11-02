@@ -12,10 +12,11 @@
 
 An original Cyberpunk 2077 modding-platform project with a new API for mod authors. The long-term target brings native plugins, scripting, database edits, resources, game services and developer tools into one package.
 
-**Current build: 0.1.1 development SDK.** The standalone native runtime and developer tools work. Game hooks, Lua, TweakDB, resource extensions, the game-script compiler and game UI are not implemented yet. This build does not replace ArchiveXL, Cyber Engine Tweaks, TweakXL, RED4ext, Codeware or redscript. It has not been tested inside Cyberpunk.
+**Current build: 0.1.2 development SDK.** The standalone native runtime and developer tools work. Game hooks, Lua, TweakDB, resource extensions, the game-script compiler and game UI are not implemented yet. This build does not replace ArchiveXL, Cyber Engine Tweaks, TweakXL, RED4ext, Codeware or redscript. It has not been tested inside Cyberpunk.
 
 ## Working now
 
+- Typed values, signature lookup and checked native calls with caller-owned results; see [typed API](docs/typed-calls.md).
 - Native Windows x64 DLL host and C ABI, with C and C++ example mods.
 - Strict manifests, semantic versions, dependency ordering and unavailable-capability checks before plugin startup.
 - Owned callbacks and deferred tasks, safe callback-list mutation, cancellation and closing/release states.
@@ -37,6 +38,8 @@ Open [Actions](https://github.com/Hitie/neonforge/actions/workflows/windows.yml)
 .\runtime\neonforge.exe validate .\examples\mods
 .\runtime\neonforge.exe run .\examples\mods .\data --ticks 3
 ```
+
+Run `Run-Typed-Demo.cmd` for the C signature-lookup and typed-call example.
 
 The original provider and consumer plugins exchange a versioned math service, receive a ready event, run a deferred task and persist results. This runs in a standalone process. Do not copy this SDK candidate over your game loaders.
 
