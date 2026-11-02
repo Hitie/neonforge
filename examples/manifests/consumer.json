@@ -1,0 +1,26 @@
+{
+  "id": "org.neonforge.consumer",
+  "name": "NEONFORGE Original C++ Consumer",
+  "version": "0.1.0",
+  "api": 1,
+  "entry": "plugin.dll",
+  "requires": [
+    {
+      "id": "org.neonforge.example",
+      "min": "0.1.0",
+      "max_exclusive": "1.0.0"
+    }
+  ],
+  "capabilities": [
+    {
+      "name": "nf.tasks",
+      "version": 1,
+      "required": true
+    },
+    {
+      "name": "nf.services",
+      "version": 1,
+      "required": true
+    }
+  ]
+}

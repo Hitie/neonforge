@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Current feature status
+    url: https://github.com/Hitie/neonforge/blob/main/docs/status.md
+    about: Check implemented features and current development limitations.
+  - name: Private vulnerability report
+    url: https://github.com/Hitie/neonforge/security/advisories/new
+    about: Use private reporting when available; see SECURITY.md for the fallback.

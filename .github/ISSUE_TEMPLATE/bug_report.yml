@@ -1,0 +1,26 @@
+name: Bug report
+description: Report a reproducible NEONFORGE problem.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "For security issues, follow SECURITY.md. Remove private data from logs."
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Include Windows/toolchain versions and standalone or game context.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Include a small original example, expected result and actual result.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs and verification
+      description: Include sanitized logs and exact commands. Game claims need the exact executable build.

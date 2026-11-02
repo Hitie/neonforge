@@ -1,0 +1,12 @@
+{
+  "format": 1,
+  "game": "Cyberpunk 2077",
+  "platform": "windows-x64-steam",
+  "steam_build_id": "26161058",
+  "product_version": "2.5",
+  "executable_sha256": "d36e74c47592e9c656ae250078cb40b2be63c782af5bfbeff2280d43e653fab4",
+  "address_metadata_sha256": "eab304f38074145ab5ef53e2aa741576ba00674138761fafff23252005948fd4",
+  "engine_adapter_ready": false,
+  "game_tested": false,
+  "status": "identity baseline only; no verified call signatures, hooks or game layouts"
+}

@@ -1,0 +1,60 @@
+name: Windows build, tests and SDK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  standalone-sdk:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out original source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        id: python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+          architecture: x64
+      - name: Configure Windows x64
+        run: cmake -S . -B build -A x64 '-DPython3_EXECUTABLE=${{ steps.python.outputs.python-path }}'
+      - name: Build Release
+        run: cmake --build build --config Release --parallel 2
+      - name: Test native runtime, examples and distributions
+        run: ctest --test-dir build -C Release --output-on-failure --output-junit '${{ github.workspace }}/test-results.xml'
+      - name: Package source and standalone SDK
+        run: python tools/package_sdk.py --build-dir build/Release --output-dir dist
+      - name: Upload SDK, source and SHA-256 hashes
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: NEONFORGE-Windows-x64-SDK-${{ github.run_number }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+      - name: Upload test evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: NEONFORGE-Test-Results-${{ github.run_number }}
+          path: |
+            test-results.xml
+            build/Testing/Temporary/LastTest.log
+          if-no-files-found: warn
+          retention-days: 14
