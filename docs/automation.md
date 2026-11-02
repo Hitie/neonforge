@@ -8,7 +8,7 @@ Open the repository's Actions page, choose a successful Windows run, and downloa
 
 This workflow builds the standalone developer SDK. It does not install Cyberpunk, run the game, prove engine hooks or publish a public release automatically. The exact downloaded artifact must retain its development status and game-feature limitations.
 
-Future releases can add a separately authorized tag/release workflow after the corresponding game capabilities are qualified. No desktop scheduled task or recurring AI agent is created by this GitHub workflow.
+Future releases can add a tag/release workflow after the corresponding game capabilities are qualified.
 
 ## Security automation
 
