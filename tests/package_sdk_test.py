@@ -99,6 +99,19 @@ class DistributionTests(unittest.TestCase):
         selected = [p.relative_to(root).as_posix() for p in package_sdk.source_files(root)]
         self.assertEqual(selected, ['LICENSE', 'src/owned.cpp'])
 
+    def test_extracted_sdk_audit_runs_without_modifying_fixture(self):
+        result=package_sdk.build_distributions(SOURCE,BUILD,self.root/'dist')
+        with zipfile.ZipFile(self.root/'dist'/result['sdk']['name']) as archive:
+            archive.extractall(self.root/'extracted')
+        sdk=next((self.root/'extracted').iterdir())
+        self.assertTrue((sdk/'tools/game_audit.py').is_file(),'documented audit tool missing from SDK')
+        game=self.root/'game';game.mkdir();(game/'original.bin').write_bytes(b'original')
+        output=self.root/'audit.json'
+        run=subprocess.run([sys.executable,str(sdk/'tools/game_audit.py'),str(game),'--output',str(output)],capture_output=True,text=True,timeout=30)
+        self.assertEqual(run.returncode,0,run.stdout+run.stderr)
+        self.assertEqual(json.loads(output.read_text())['files_hashed'],1)
+        self.assertEqual((game/'original.bin').read_bytes(),b'original')
+
     def test_extracted_sdk_runs_original_lua_mods_and_retains_notices(self):
         result = package_sdk.build_distributions(SOURCE, BUILD, self.root / 'dist')
         with zipfile.ZipFile(self.root / 'dist' / result['sdk']['name']) as archive:
