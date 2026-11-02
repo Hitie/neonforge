@@ -1,5 +1,13 @@
 # Changes
 
+## 0.1.5 development SDK
+
+- Original native offline data engine with exact 64-bit integers, symbolic types, vectors, quaternions, colors and homogeneous arrays.
+- Schema-checked create/clone/set/delete and array edits, immutable snapshots, atomic commits, stale-revision rejection and failure rollback.
+- Bounded provenance and retained data, safe moved-from handles and creating-thread/lifetime checks.
+- Declarative validate/plan/apply CLI, deterministic cross-owner overwrite reports and original extracted-SDK data example.
+- Existing native and typed ABI headers unchanged. Expanded native/Lua transport, database templates/inheritance/reload and actual TweakDB integration remain pending.
+
 ## 0.1.4 development SDK
 
 - Read-only full-file SHA-256 audit with visible traversal/read/change errors and known loader markers.
