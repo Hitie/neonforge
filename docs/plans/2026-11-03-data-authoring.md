@@ -1,6 +1,6 @@
 # Reusable data authoring and last-valid state implementation plan
 
-Implementation uses regression-first validation and an independent whole-change review.
+Implementation uses regression tests first, followed by a review of the whole change.
 
 **Goal:** Complete the next offline database milestone with schema inheritance, templates, validated checkpoints and last-valid reload.
 
@@ -31,8 +31,8 @@ Files: `src/data_authoring.cpp`, `src/data_model.hpp`, `src/data_model.cpp`, `sr
 
 Interfaces: `Json resolve_schemas(const Json&, Limits = {})`; `std::unique_ptr<Database> build_project(const Json&)`. Project `templates` maps names to `{extends?, type?, fields}`; `instantiate` operations name a template and optional field overrides. Resolved schemas feed both database validation and overwrite planning.
 
-- [ ] Write real tests for inherited required fields, no shadowing, forward references, cycles/depth, template chaining/override/type checks and independent instances. Observe RED.
-- [ ] Implement bounded composition and run the native/CLI data suite to GREEN.
+- [ ] Write real tests for inherited required fields, no shadowing, forward references, cycles/depth, template chaining/override/type checks and independent instances. confirm they fail first.
+- [ ] Implement bounded composition and run the native/CLI data suite to passing.
 
 ## Task 2: Validated checkpoints and reload
 
@@ -40,14 +40,14 @@ Files: `src/data_model.cpp`, `src/data_session.cpp`, header and tests.
 
 Interfaces: `Database::checkpoint()`, `Database::restore_checkpoint(const Json&)`; `ProjectSession::reload(std::string_view)`, `restore(std::string_view)`, `snapshot()`, `checkpoint()`, `generation()`, `error()`.
 
-- [ ] Write tests for exact checkpoint round trips, subsequent edits/stale transactions, invalid imports, state budgets, lifetime/thread behavior, failed parse/type reloads, equivalent reloads and schema-only changes. Observe RED.
-- [ ] Validate entire checkpoint before publishing; reuse state budget checks; preserve previous session on all candidate errors. Run focused suite to GREEN.
+- [ ] Write tests for exact checkpoint round trips, subsequent edits/stale transactions, invalid imports, state budgets, lifetime/thread behavior, failed parse/type reloads, equivalent reloads and schema-only changes. confirm they fail first.
+- [ ] Validate entire checkpoint before publishing; reuse state budget checks; preserve previous session on all candidate errors. Run focused suite to passing.
 
 ## Task 3: SDK authoring workflow and publication
 
 Files: CLI, original example, CLI/distribution tests, package/version/docs and build integration.
 
-- [ ] Write CLI tests for checkpoint/restore/reload and inherited template examples; observe RED.
+- [ ] Write CLI tests for checkpoint/restore/reload and inherited template examples; confirm they fail first.
 - [ ] Implement stdout-only commands and diagnostics, document use/limits and bump SDK development version.
-- [ ] Run full CMake and direct MSVC suites, extracted SDK and independent source-export builds. Fresh whole-change review; substantive findings get a single RED-to-GREEN fix pass and full green suite.
+- [ ] Run full CMake and direct MSVC suites, extracted SDK and independent source-export builds. Review the whole change; fix substantive findings with a failing test first, then rerun the full suite.
 - [ ] Upload feature branch, verify protected GitHub checks and merge; verify main tree against the reviewed files. Deliver SDK and source.

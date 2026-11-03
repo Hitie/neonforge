@@ -19,7 +19,7 @@
 2. Implement strict value validation/owned copies and explicit numeric conversion. Test full integer ranges, finite floats, invalid UTF-8, malformed spans and exact byte preservation.
 3. Implement owned function registry, signature lookup, invocation and result lifecycle. Test callback exceptions, wrong arity/types, stale/foreign handles, close during callbacks, reentrant calls and provider removal.
 4. Add a C example and compile the header as C11. Ship a typed demo and extracted-SDK verification; retain existing native examples and ABI tests.
-5. Build through both supported paths, run the full suite, obtain a fresh focused review and publish through required GitHub checks. Version the SDK only after the extension is working. No live game work is included.
+5. Build through both supported paths, run the full suite, review the change and publish through required GitHub checks. Version the SDK only after the extension is working. No live game work is included.
 
 ## Review focus
 

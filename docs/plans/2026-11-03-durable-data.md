@@ -2,7 +2,7 @@
 
 **Goal:** Persist validated offline data and automatically try settled file changes while retaining the last committed state on failure.
 
-**Spec:** Extends offline readiness step 2 and the original standalone data engine. Independent API, original implementation, unchanged primitive ABI headers and GPLv3. No game action. Implementation proceeds inline with regression-first checks and one independent whole-change review. After this milestone, continue into original offline resource composition and dependency validation as requested.
+**Spec:** Extends offline readiness step 2 and the original standalone data engine. Independent API, original implementation, unchanged primitive ABI headers and GPLv3. No game changes. Implementation uses regression tests first, followed by a review of the whole change. The next milestone is original offline resource composition and dependency validation.
 
 **Architecture:** Python standard-library developer tooling around the production native validator, without duplicating type/schema semantics. Native CLI gains bounded binary stdin and checkpoint normalization. A local Windows store has two checkpoint slots and current/previous SHA-256-bound commit markers. Save prepares the inactive slot before atomically publishing its marker. OS handle locks release on process exit. Polling compares complete owned bytes, waits for a settle interval, validates once per distinct candidate and publishes only after storage succeeds.
 
@@ -26,7 +26,7 @@
 
 ## Task 1 — Native streaming boundary
 
-Files: data CLI, authoring tests. Add `-` binary stdin and `canonicalize` checkpoint command. Observe missing-command RED; verify exact round trips, byte caps and broken stdout through production CLI.
+Files: data CLI, authoring tests. Add `-` binary stdin and `canonicalize` checkpoint command. Confirm the missing command fails first; verify exact round trips, byte caps and broken stdout through production CLI.
 
 ## Task 2 — Durable developer store
 

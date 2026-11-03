@@ -312,6 +312,9 @@ int wmain(int argc, wchar_t **wide)
 {
     try
     {
+        // Keep the current directory and PATH out of later DLL searches.
+        if (!SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS))
+            throw std::runtime_error("cannot restrict DLL search directories");
         std::vector<std::string> args;
         for (int i = 0; i < argc; ++i)
             args.push_back(utf8(std::filesystem::path(wide[i])));

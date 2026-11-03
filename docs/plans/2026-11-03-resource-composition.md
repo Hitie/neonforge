@@ -28,7 +28,7 @@
 
 ## Task 1 — Native composition model
 
-Files: `src/resource_model.hpp`, `src/resource_model.cpp`, native resource tests and both build paths. Interface: `Json compose_resources(const Json&)`. Add dependency, field composition/type/expectation, canonical path/reference, localization and appearance tests; observe missing API RED. Implement using original Manifest/Database/Value validators and explicit budgets; run focused suite.
+Files: `src/resource_model.hpp`, `src/resource_model.cpp`, native resource tests and both build paths. Interface: `Json compose_resources(const Json&)`. Add dependency, field composition/type/expectation, canonical path/reference, localization and appearance tests; confirm the missing API fails first. Implement using original Manifest/Database/Value validators and explicit budgets; run focused suite.
 
 ## Task 2 — Content identity and immutable reload
 
@@ -36,4 +36,4 @@ Files: `src/resource_hash.cpp`, native tests. Interfaces: `std::string resource_
 
 ## Task 3 — Authoring CLI and SDK
 
-Files: `src/resource_cli.cpp`, original `examples/resources`, CLI/distribution tests, package/version/docs. `nf_resources plan|validate project.json` supports bounded binary stdin; stdout only. Add RED real-executable/extracted-SDK tests and original multilingual/appearance sample. Run full CMake/direct/exported-source checks, one independent whole-change review, substantive RED-to-GREEN fixes and protected GitHub publication. Keep game flags false and describe remaining engine work.
+Files: `src/resource_cli.cpp`, original `examples/resources`, CLI/distribution tests, package/version/docs. `nf_resources plan|validate project.json` supports bounded binary stdin; stdout only. Add failing real-executable/extracted-SDK tests and original multilingual/appearance sample. Run full CMake/direct/exported-source checks, a review of the whole change, test-first fixes for substantive findings and protected GitHub publication. Keep game flags false and describe remaining engine work.

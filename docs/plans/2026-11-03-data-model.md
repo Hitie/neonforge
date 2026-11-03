@@ -2,7 +2,7 @@
 
 **Goal:** Supply an original, usable offline C++ data engine and declarative CLI before game integration.
 
-**Authorization and spec:** Implements step 2 of [offline readiness](2026-11-03-offline-readiness.md) under the approved independent-runtime/new-API design and continued execution instructions. No additional game access is required. Existing native/typed ABI 1 tables and headers stay unchanged. This phase does not claim engine TweakDB support or expanded-value transport through Lua/native ABI 1.
+**Spec:** Implements step 2 of [offline readiness](2026-11-03-offline-readiness.md) on the independent-runtime/new-API design. No additional game access is required. Existing native/typed ABI 1 tables and headers stay unchanged. This phase does not claim engine TweakDB support or expanded-value transport through Lua/native ABI 1.
 
 **Architecture:** Immutable owned values and snapshots; copy-on-write records inside a transaction; optimistic snapshot identity checks at commit. A bad operation poisons the transaction, preventing partial publication even when its error is caught. Original tagged JSON preserves 64-bit integers as decimal strings. A separate SDK CLI uses the same production model and original examples. No game formats or framework implementations are copied.
 
@@ -44,6 +44,6 @@ Files: `src/data_cli.cpp`, original `examples/data`, CLI/integration/distributio
 
 - [ ] Add CLI failing tests for actual patch outputs/errors and deterministic planning.
 - [ ] Implement strict project/schema/operation validation through the model, original example and extracted-SDK checks.
-- [ ] Run full CMake/direct/exported-source verification, obtain fresh whole-change review, fix substantive findings RED to GREEN and publish through protected GitHub checks.
+- [ ] Run full CMake/direct/exported-source verification, review the whole change, fix substantive findings with a failing test first and publish through protected GitHub checks.
 
 Technical stack: original C++20/Windows x64 engine using existing original JSON parser and standard library. Existing dedicated workspace remains isolated from the game; GitHub publication uses a feature branch. No new third-party dependency or live game action.

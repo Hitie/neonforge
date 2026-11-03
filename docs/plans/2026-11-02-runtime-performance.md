@@ -2,7 +2,7 @@
 
 **Goal:** Measure and improve event dispatch and task cancellation at realistic high registration counts, while preserving ABI 1 and existing lifecycle behavior.
 
-**Architecture:** Add a native benchmark that calls the actual runtime DLL through its C ABI. Compare an unchanged baseline DLL with the candidate using the same benchmark executable. Index events by name with immutable cached token snapshots; use links embedded in canonically owned task nodes for direct task removal without an extra queue allocation. These are implementation changes within the approved standalone core design.
+**Architecture:** Add a native benchmark that calls the actual runtime DLL through its C ABI. Compare an unchanged baseline DLL with the candidate using the same benchmark executable. Index events by name with immutable cached token snapshots; use links embedded in canonically owned task nodes for direct task removal without an extra queue allocation. These are implementation changes within the standalone core design.
 
 **Constraints:** Windows x64/C++20; original implementation; no game or CPVC changes; no competitor superiority claims from these measurements; no timing thresholds in correctness tests; source and GPLv3 retained.
 
@@ -34,11 +34,11 @@
 - [x] Add real-DLL regressions for cancellation of selected tasks, closing other owners, queue churn, FIFO and non-reentrant pumping.
 - [x] Replace queue scans with stable task-node links. Mark tasks removed from the queue before callbacks; reuse bounded pump scratch storage.
 - [x] Run all tests, then the same Release benchmark executable against baseline and candidate DLLs.
-- [x] Version and document the development SDK, package original source/runtime, obtain a fresh review and address substantive findings with reproducing tests.
+- [x] Version and document the development SDK, package original source/runtime, review the change and fix substantive findings with reproducing tests.
 - [ ] Publish through a pull request and required GitHub checks. Record measured gains and tradeoffs; retain unfinished game status.
 
 The original game/bootstrap and 95-capability roadmap remains open. This phase improves standalone infrastructure rather than qualifying game support.
 
 ## Verification record
 
-CMake Release suite: 9/9 groups passed. Direct MSVC build and its complete checks passed. Fresh review reported no runtime blockers; its benchmark validation issue was reproduced with a defective DLL, fixed, and the full suite passed. No deferred findings. Reference measurements and artifact hashes are in performance.md and benchmarks/results/. Publication is tracked by the protected pull request rather than assumed from local tests.
+CMake Release suite: 9/9 groups passed. Direct MSVC build and its complete checks passed. Review found no runtime blockers; a benchmark validation issue was reproduced with a defective DLL, fixed, and the full suite passed. No deferred findings. Reference measurements and artifact hashes are in performance.md and benchmarks/results/. Publication is tracked by the protected pull request rather than assumed from local tests.

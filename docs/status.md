@@ -25,13 +25,13 @@ Development SDK 0.1.8. The full project remains unfinished.
 | Original compiler and game-script bytecode integration | Not implemented |
 | Game UI, input and player/world services | Not implemented |
 
-The approved design tracks 95 broad capability groups. These groups include extensive game behavior; the working standalone services are not counted as completed game systems. Additional developer tools implement parts of that scope and improve diagnostics, but do not establish feature parity with all six reference frameworks.
+The design tracks 95 broad capability groups. These groups include extensive game behavior; the working standalone services are not counted as completed game systems. Additional developer tools implement parts of that scope and improve diagnostics, but do not establish feature parity with all six reference frameworks.
 
 Every future capability must identify its implementation, negative/lifecycle tests, exact executable identity and observed in-game acceptance scenario. A successful build, old log, archive index or matched address is insufficient evidence of runtime behavior.
 
 ## Next integration gate
 
-Complete the [offline readiness plan](plans/2026-11-03-offline-readiness.md) before live integration. Read-only investigation of the user's fresh installation is authorized for identity, format and type research. Offline values/transactions, templates/inheritance, checkpoint import/export and caller-driven last-valid reload are implemented. The developer store now supplies polling file watching and tested process-interruption recovery. Hardware power-loss qualification, expanded native/Lua transport and engine adapters remain pending.
+Complete the [offline readiness plan](plans/2026-11-03-offline-readiness.md) before live integration. Read-only investigation of a fresh local installation is used for identity, format and type research. Offline values/transactions, templates/inheritance, checkpoint import/export and caller-driven last-valid reload are implemented. The developer store now supplies polling file watching and tested process-interruption recovery. Hardware power-loss qualification, expanded native/Lua transport and engine adapters remain pending.
 
 After that offline gate, qualify a complete original bootstrap, demonstrate safe initialization timing and verify the first engine lifecycle/native call on an isolated candidate profile. Only then enable the corresponding adapter capability. The SDK candidate remains intended for standalone developer evaluation.
 
