@@ -7,7 +7,7 @@ import struct
 import zipfile
 from pathlib import Path
 
-VERSION = '0.1.7-dev.1'
+VERSION = '0.1.8-dev.1'
 ROOT_FILES = {'.gitattributes', '.clang-format', '.gitignore', 'CMakeLists.txt', 'build.ps1', 'README.md', 'CHANGELOG.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CONTRIBUTING.md', 'SECURITY.md', '.github/CODEOWNERS', 'benchmarks/results/baseline.json', 'benchmarks/results/candidate.json'}
 DIRECTORIES = {
     'src': {'.cpp', '.hpp', '.h'},
@@ -119,7 +119,7 @@ def _checksums(entries):
 
 def build_distributions(source, build, output):
     source, build, output = Path(source).resolve(), Path(build).resolve(), Path(output).resolve()
-    binaries = {name: _native(build / name) for name in ['neonforge.exe', 'NeonForge.Core.dll', 'nf_example.dll', 'nf_consumer.dll', 'nf_winmm_probe.exe', 'nf_benchmark.exe', 'nf_typed_example.exe', 'nf_script_benchmark.exe', 'nf_data.exe']}
+    binaries = {name: _native(build / name) for name in ['neonforge.exe', 'NeonForge.Core.dll', 'nf_example.dll', 'nf_consumer.dll', 'nf_winmm_probe.exe', 'nf_benchmark.exe', 'nf_typed_example.exe', 'nf_script_benchmark.exe', 'nf_data.exe', 'nf_resources.exe']}
     import_library = build / 'NeonForge.Core.lib'
     _regular(import_library)
     library_data = import_library.read_bytes()
@@ -149,6 +149,7 @@ def build_distributions(source, build, output):
         'runtime/nf_typed_example.exe': binaries['nf_typed_example.exe'],
         'runtime/nf_script_benchmark.exe': binaries['nf_script_benchmark.exe'],
         'runtime/nf_data.exe': binaries['nf_data.exe'],
+        'runtime/nf_resources.exe': binaries['nf_resources.exe'],
         'lib/NeonForge.Core.lib': library_data,
         'examples/mods/org.neonforge.example/plugin.dll': binaries['nf_example.dll'],
         'examples/mods/org.neonforge.consumer/plugin.dll': binaries['nf_consumer.dll'],
@@ -163,7 +164,7 @@ def build_distributions(source, build, output):
     for name, data in original.items():
         if name.startswith('include/'):
             sdk[name] = data
-        elif name.startswith(('examples/native/', 'examples/scripts/', 'examples/data/')):
+        elif name.startswith(('examples/native/', 'examples/scripts/', 'examples/data/', 'examples/resources/')):
             sdk[name] = data
         elif name.startswith(('docs/', 'schemas/', 'adapters/', 'benchmarks/results/')) or name in {'tools/forge.py', 'tools/benchmark.py', 'tools/game_audit.py', 'tools/data_store.py', 'tools/windows_files.py'}:
             sdk[name] = data
@@ -171,7 +172,7 @@ def build_distributions(source, build, output):
 
 One foundation. Build Night City.
 
-This is a development SDK, not an installed Cyberpunk mod or a replacement for the six reference frameworks. Standalone Lua is available. Engine hooks, TweakDB, resources, the compiler and game UI remain unavailable. Do not copy this package over your game's loaders.
+This is a development SDK, not an installed Cyberpunk mod or a replacement for the six reference frameworks. Standalone Lua, typed data and symbolic resource composition are available. Engine hooks, TweakDB integration, archive mounting, the compiler and game UI remain unavailable. Do not copy this package over your game's loaders.
 
 Extract the complete directory and double-click Run-Demo.cmd. The original C and C++ plugins exchange a service, receive an event, execute a deferred task and persist their results under data/. No game installation is required. Windows x64 and the Microsoft Visual C++ x64 runtime are required; Python 3.10+ is needed for the developer tools, including data_store.py. Native runtime/data commands do not require Python.
 
@@ -180,6 +181,8 @@ Run-Typed-Demo.cmd demonstrates signature lookup and typed native invocation fro
 Run-Lua-Demo.cmd loads the original Lua provider/consumer packages, resolves typed calls and saves their result under data/lua-demo/. See docs/scripting.md. The host embeds pinned Lua 5.5.1; its MIT license and attribution are included.
 
 Run-Data-Demo.cmd previews an original typed database project, then prints its atomic offline result. See docs/data-model.md. This tool does not read or modify the game's database.
+
+Use runtime\\nf_resources.exe plan examples\\resources\\original-packages.json to compose the original resource example. See docs/resources.md for dependency checks, localization, appearance rules and cache identity. This command builds an offline catalog; it does not mount game archives.
 
 Commands:
 

@@ -12,7 +12,7 @@
 
 An original Cyberpunk 2077 modding-platform project with a new API for mod authors. The long-term target brings native plugins, scripting, database edits, resources, game services and developer tools into one package.
 
-**Current build: 0.1.7 development SDK.** The standalone native runtime, Lua layer and developer tools work. Game hooks, TweakDB, resource extensions, the game-script compiler and game UI are not implemented yet. This build does not replace ArchiveXL, Cyber Engine Tweaks, TweakXL, RED4ext, Codeware or redscript. It has not been tested inside Cyberpunk.
+**Current build: 0.1.8 development SDK.** The standalone native runtime, Lua layer and developer tools work. Game hooks, TweakDB, resource extensions, the game-script compiler and game UI are not implemented yet. This build does not replace ArchiveXL, Cyber Engine Tweaks, TweakXL, RED4ext, Codeware or redscript. It has not been tested inside Cyberpunk.
 
 ## Working now
 
@@ -47,6 +47,8 @@ Run `Run-Data-Demo.cmd` for the original declarative data project.
 The [data authoring guide](docs/data-model.md) also covers reusable templates, additive schema inheritance, validated checkpoints and reload that keeps the last valid state. Try `runtime\nf_data.exe checkpoint examples\data\reusable-items.json` to print an original checkpoint.
 
 Use the [durable data tool](docs/durable-data.md) to save checkpoints with process-interruption recovery or watch a project for settled changes. It uses the packaged native validator and preserves the last committed state on errors.
+
+The [native resource composer](docs/resources.md) validates original typed catalogs, property overlaps, dependencies, localization fallback and conditional appearances. Try `runtime\nf_resources.exe plan examples\resources\original-packages.json` for an offline catalog and content key.
 
 Run `Run-Typed-Demo.cmd` for the C signature-lookup and typed-call example, or `Run-Lua-Demo.cmd` for the original Lua provider/consumer packages.
 

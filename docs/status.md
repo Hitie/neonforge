@@ -1,6 +1,6 @@
 # Capability and evidence status
 
-Development SDK 0.1.7. The full project remains unfinished.
+Development SDK 0.1.8. The full project remains unfinished.
 
 | Area | Current state |
 | --- | --- |
@@ -20,6 +20,7 @@ Development SDK 0.1.7. The full project remains unfinished.
 | Lua game observers/lifecycle/input/overlay | Not implemented |
 | Original offline typed data/transaction engine and authoring CLI | Implemented and tested outside the game; see [data model](data-model.md) |
 | Actual TweakDB edits | Not implemented |
+| Original offline resource catalog, typed composition, localization and appearance rules | Implemented and tested outside the game; see [resources](resources.md) |
 | Archive/resource/appearance/world/quest extensions | Not implemented |
 | Original compiler and game-script bytecode integration | Not implemented |
 | Game UI, input and player/world services | Not implemented |

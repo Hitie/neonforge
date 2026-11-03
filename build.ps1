@@ -41,6 +41,13 @@ try {
   if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @common ($PSScriptRoot+'\src\data_cli.cpp') 'data_values.obj' 'data_model.obj' 'data_project.obj' 'data_authoring.obj' 'data_session.obj' 'json.obj' 'manifest.obj' '/Fe:nf_data.exe'
   if($LASTEXITCODE){exit $LASTEXITCODE}
+  & ($bin+'\cl.exe') @common '/c' ($PSScriptRoot+'\src\resource_model.cpp') ($PSScriptRoot+'\src\resource_hash.cpp') ($PSScriptRoot+'\src\resource_session.cpp')
+  if($LASTEXITCODE){exit $LASTEXITCODE}
+  $resourceObjects=@('resource_model.obj','resource_hash.obj','resource_session.obj','data_values.obj','data_model.obj','data_project.obj','data_authoring.obj','data_session.obj','json.obj','manifest.obj','bcrypt.lib')
+  & ($bin+'\cl.exe') @common ($PSScriptRoot+'\tests\resource_tests.cpp') @resourceObjects '/Fe:nf_resource_tests.exe'
+  if($LASTEXITCODE){exit $LASTEXITCODE}
+  & ($bin+'\cl.exe') @common ($PSScriptRoot+'\src\resource_cli.cpp') @resourceObjects '/Fe:nf_resources.exe'
+  if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @common '/LD' ($PSScriptRoot+'\src\exports.cpp') ($PSScriptRoot+'\src\kernel.cpp') ($PSScriptRoot+'\src\json.cpp') ($PSScriptRoot+'\src\manifest.cpp') '/Fe:NeonForge.Core.dll'
   if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @common ($PSScriptRoot+'\tests\kernel_tests.cpp') 'NeonForge.Core.lib' '/Fe:nf_kernel_tests.exe'
@@ -84,6 +91,8 @@ try {
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\data_cli_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\data_authoring_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\data_store_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
+    & .\nf_resource_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
+    & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\resource_cli_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_kernel_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_script_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_typed_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}

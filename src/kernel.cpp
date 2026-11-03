@@ -1150,7 +1150,7 @@ const nf_api &kernel_api()
                                NF_ABI_VERSION,
                                0,
                                1,
-                               7,
+                               8,
                                0,
                                create,
                                destroy,

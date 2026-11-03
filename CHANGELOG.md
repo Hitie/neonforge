@@ -1,5 +1,13 @@
 # Changes
 
+## 0.1.8 development SDK
+
+- Original native resource catalog with stable package/version dependencies, schema-checked property composition and explicit prior-owner conflicts.
+- Canonical virtual paths, nested resource/localization references, original-key provider checks and transitive dependency enforcement.
+- Localization fallback and chronological ownership, typed conditional appearances and exact signed priorities with deterministic tie rejection.
+- Content-based SHA-256 identity, immutable last-valid resource sessions and a packaged native CLI/original example.
+- Primitive C ABI headers and GPLv3 preserved. Asset mounting/decoding and game integration remain unqualified.
+
 ## 0.1.7 development SDK
 
 - Owned Windows checkpoint store with hash-bound current/previous commit markers, two slots, exclusive OS handle locks and stale-generation rejection.

@@ -1,0 +1,139 @@
+{
+  "format": 1,
+  "locale": "fr-fr",
+  "fallback_locale": "en-us",
+  "context": {
+    "body": {
+      "type": "name",
+      "value": "Slim"
+    }
+  },
+  "types": {
+    "Entity": {
+      "fields": {
+        "title": {
+          "type": "localization",
+          "required": true
+        },
+        "mesh": {
+          "type": "resource"
+        },
+        "enabled": {
+          "type": "bool"
+        }
+      }
+    },
+    "Visual": {
+      "fields": {
+        "label": {
+          "type": "string",
+          "required": true
+        }
+      }
+    }
+  },
+  "packages": [
+    {
+      "id": "example.base",
+      "version": "1.0.0",
+      "resources": {
+        "original/entity.nf": {
+          "type": "Entity",
+          "fields": {
+            "title": {
+              "type": "localization",
+              "value": "Greeting"
+            },
+            "mesh": {
+              "type": "resource",
+              "value": "original/mesh.nf"
+            }
+          }
+        },
+        "original/mesh.nf": {
+          "type": "Visual",
+          "fields": {
+            "label": {
+              "type": "string",
+              "value": "Original"
+            }
+          }
+        },
+        "original/slim.nf": {
+          "type": "Visual",
+          "fields": {
+            "label": {
+              "type": "string",
+              "value": "Slim"
+            }
+          }
+        }
+      },
+      "localization": {
+        "en-us": {
+          "Greeting": {
+            "text": "Hello"
+          }
+        },
+        "ja-jp": {
+          "Greeting": {
+            "text": "こんにちは"
+          }
+        }
+      },
+      "appearances": {
+        "original.body": {
+          "fallback": "original/mesh.nf",
+          "variants": [
+            {
+              "resource": "original/slim.nf",
+              "when": {
+                "body": {
+                  "type": "name",
+                  "value": "Slim"
+                }
+              },
+              "priority": "10"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "example.patch",
+      "version": "1.0.0",
+      "requires": [
+        {
+          "id": "example.base",
+          "min": "1.0.0"
+        }
+      ],
+      "patches": [
+        {
+          "resource": "original/entity.nf",
+          "fields": {
+            "enabled": {
+              "type": "bool",
+              "value": true
+            },
+            "mesh": {
+              "type": "resource",
+              "value": "original/slim.nf"
+            }
+          },
+          "expect": {
+            "mesh": "example.base"
+          }
+        }
+      ],
+      "localization": {
+        "en-us": {
+          "Greeting": {
+            "text": "Welcome",
+            "expect_owner": "example.base"
+          }
+        }
+      }
+    }
+  ]
+}

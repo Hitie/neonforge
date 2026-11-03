@@ -152,6 +152,22 @@ class DistributionTests(unittest.TestCase):
         self.assertEqual(loaded.returncode,0,loaded.stderr)
         self.assertEqual(json.loads(loaded.stdout)['state']['records']['Items.First']['fields']['id']['value'],'18446744073709551615')
 
+    def test_extracted_sdk_native_resource_composer(self):
+        result=package_sdk.build_distributions(SOURCE,BUILD,self.root/'dist')
+        with zipfile.ZipFile(self.root/'dist'/result['sdk']['name']) as archive:
+            archive.extractall(self.root/'extracted')
+        sdk=next((self.root/'extracted').iterdir())
+        binary=sdk/'runtime/nf_resources.exe'
+        self.assertTrue(binary.is_file(),'native resource composer missing from SDK')
+        project=sdk/'examples/resources/original-packages.json'
+        self.assertTrue(project.is_file(),'original resource project missing from SDK')
+        run=subprocess.run([str(binary),'plan',str(project)],capture_output=True,text=True,encoding='utf-8',timeout=30)
+        self.assertEqual(run.returncode,0,run.stderr)
+        plan=json.loads(run.stdout)
+        self.assertEqual(plan['localization']['selected']['Greeting']['text'],'Welcome')
+        self.assertEqual(plan['appearances']['original.body']['selected']['resource'],'original/slim.nf')
+        self.assertFalse(plan['engine_adapter_ready'])
+
     def test_extracted_sdk_audit_runs_without_modifying_fixture(self):
         result=package_sdk.build_distributions(SOURCE,BUILD,self.root/'dist')
         with zipfile.ZipFile(self.root/'dist'/result['sdk']['name']) as archive:
