@@ -2,11 +2,11 @@
 
 **Goal:** Make original Lua mods usable alongside native plugins through the existing standalone host, with typed calls, events, tasks, settings and bounded reloads.
 
-**Authorization:** Implements the approved independent-runtime/new-API design and the user's instruction to continue the scripting-layer proposal. Routine implementation choices below are engineering decisions, not additional user preferences. No game installation changes are included.
+**Scope:** Implements the scripting layer on the independent-runtime/new-API design. No game installation changes are included.
 
 **Architecture:** Embed pinned Lua 5.5.1 as a private static C++ library, retaining unmodified upstream source and MIT notice. A ScriptHost owns one Lua state and core context per script mod. Existing native ABI 1 and the typed API remain unchanged. Both entry types share manifests, preflight/dependency ordering and shutdown. Lua availability is a host capability, not a false core-DLL capability.
 
-**Approaches:** A separate script runner would duplicate packaging and prevent ordinary mixed dependency chains. A homegrown interpreter would delay useful authoring and language correctness. The chosen embedded Lua adapter uses the already authorized infrastructure-library allowance; all bindings and lifecycle policy are original NEONFORGE code.
+**Approaches:** A separate script runner would duplicate packaging and prevent ordinary mixed dependency chains. A homegrown interpreter would delay useful authoring and language correctness. The chosen embedded Lua adapter fits the project's allowance for infrastructure libraries; all bindings and lifecycle policy are original NEONFORGE code.
 
 ## Contracts
 
@@ -48,6 +48,6 @@ Files: `src/host.cpp`, `src/manifest.cpp`, `tools/forge.py`, manifest schema, bu
 - [ ] Load native and Lua entries in dependency order and stop them safely in reverse order.
 - [ ] Ship the Lua demo and upstream notices; verify extracted SDK and exported-source builds, then full CMake/direct-MSVC tests.
 - [ ] Add script workload benchmarks with real effects/counter validation; report scope without external-framework superiority claims.
-- [ ] Obtain fresh whole-change review, address substantive defects with failing regression tests, publish through protected GitHub checks.
+- [ ] Review the whole change, fix substantive defects with failing regression tests and publish through protected GitHub checks.
 
 Tech: Windows x64, C++20, Lua 5.5.1 (official source archive SHA-256 `1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce`), existing C ABI 1 and typed ABI 1. Source: https://www.lua.org/download.html and https://www.lua.org/manual/5.5/manual.html .

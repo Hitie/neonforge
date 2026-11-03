@@ -44,4 +44,4 @@ Run with the relevant host/game closed. The tool checks `schema_version`, reject
 python tools/forge.py doctor "C:/Program Files (x86)/Steam/steamapps/common/Cyberpunk 2077"
 ```
 
-The supplied baseline identifies the scanned Steam 2.5 build. The doctor hashes the executable/address file, parses PE sections, compares timestamps and counts address collisions. It reads local files and prints metadata; it does not upload game data, alter files or enable hooks. A matching baseline deliberately still reports `engine_adapter_ready: false` and `game_tested: false`.
+The included baseline identifies the scanned Steam 2.5 build. The doctor hashes the executable/address file, parses PE sections, compares timestamps and counts address collisions. It reads local files and prints metadata; it does not upload game data, alter files or enable hooks. A matching baseline deliberately still reports `engine_adapter_ready: false` and `game_tested: false`.

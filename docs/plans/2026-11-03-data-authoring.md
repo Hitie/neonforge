@@ -1,6 +1,6 @@
 # Reusable data authoring and last-valid state implementation plan
 
-Implementation uses regression-first validation and an independent whole-change review.
+Implementation uses regression tests first, followed by a review of the whole change.
 
 **Goal:** Complete the next offline database milestone with schema inheritance, templates, validated checkpoints and last-valid reload.
 
@@ -47,7 +47,7 @@ Interfaces: `Database::checkpoint()`, `Database::restore_checkpoint(const Json&)
 
 Files: CLI, original example, CLI/distribution tests, package/version/docs and build integration.
 
-- [ ] Write CLI tests for checkpoint/restore/reload and inherited template examples; observe RED.
+- [ ] Write CLI tests for checkpoint/restore/reload and inherited template examples; confirm they fail first.
 - [ ] Implement stdout-only commands and diagnostics, document use/limits and bump SDK development version.
-- [ ] Run full CMake and direct MSVC suites, extracted SDK and independent source-export builds. Fresh whole-change review; substantive findings get a single RED-to-GREEN fix pass and full green suite.
+- [ ] Run full CMake and direct MSVC suites, extracted SDK and independent source-export builds. Review the whole change; fix substantive findings with a failing test first, then rerun the full suite.
 - [ ] Upload feature branch, verify protected GitHub checks and merge; verify main tree against the reviewed files. Deliver SDK and source.

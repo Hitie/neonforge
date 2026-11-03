@@ -1,12 +1,12 @@
 # Competitive qualification target
 
-**User requirement:** NEONFORGE should be superior to the six reference frameworks, rather than merely faster than its own earlier builds.
+**Requirement:** NEONFORGE should be superior to the six reference frameworks, rather than merely faster than its own earlier builds.
 
 **Goal:** Complete the original platform's capability coverage and demonstrate advantages against pinned, compatible public framework releases with equivalent observable behavior.
 
 **Architecture:** Retain the independent runtime and new API. Compare each service with the incumbent that provides that service, and compare complete representative mod workloads with the combined dependency stack. Do not compare a no-op standalone dispatcher with an in-game engine operation.
 
-**Scope:** The six supplied frameworks and the existing 95-group capability roadmap. A broader claim about every existing or future framework is not established by these comparisons. The current user instruction is development outside the game; live qualification requires a later isolated test setup and does not authorize changing existing installations.
+**Scope:** The six reference frameworks and the existing 95-group capability roadmap. A broader claim about every existing or future framework is not established by these comparisons. Current development stays outside the game; live qualification requires a later isolated test setup and must not change existing installations.
 
 ## Current gap assessment
 

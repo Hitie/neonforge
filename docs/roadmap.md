@@ -1,6 +1,6 @@
 # NEONFORGE Core — capability ledger
 
-Research/design baseline, 2 November 2026 (Australia/Sydney). 95 tracked capability groups describe the full target and required acceptance evidence. Some standalone foundation work is implemented; [current status](status.md) is authoritative for what works today. The full game-facing groups below are not qualified by standalone tests. This baseline comes from the six supplied frameworks plus the original package/SDK design, not a claim that every undocumented behavior has been discovered.
+Research/design baseline, 2 November 2026 (Australia/Sydney). 95 tracked capability groups describe the full target and required acceptance evidence. Some standalone foundation work is implemented; [current status](status.md) is authoritative for what works today. The full game-facing groups below are not qualified by standalone tests. This baseline comes from the six reference frameworks plus the original package/SDK design, not a claim that every undocumented behavior has been discovered.
 
 A row can be split into smaller test cases during implementation. Passing a host fixture does not qualify as game-tested. Acceptance applies to a specific game build, module version and feature configuration. Native crashes cannot be reliably isolated inside one process; exceptions and malformed inputs are caught where safe, otherwise unsupported execution is refused.
 
