@@ -83,6 +83,7 @@ try {
     & .\nf_data_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\data_cli_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\data_authoring_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
+    & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\data_store_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_kernel_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_script_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_typed_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}

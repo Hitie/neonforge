@@ -1,13 +1,19 @@
 #include "data_model.hpp"
+#include <fcntl.h>
 #include <filesystem>
 #include <fstream>
+#include <io.h>
 #include <iostream>
 
 namespace
 {
 std::string read_source(const wchar_t *path, size_t limit)
 {
-    std::ifstream input(std::filesystem::path(path), std::ios::binary);
+    std::ifstream file;
+    bool streamed = std::wstring_view(path) == L"-";
+    if (!streamed)
+        file.open(std::filesystem::path(path), std::ios::binary);
+    auto &input = streamed ? std::cin : static_cast<std::istream &>(file);
     if (!input)
         throw std::invalid_argument("cannot read data input");
     std::string source(limit + 1, '\0');
@@ -22,22 +28,31 @@ int wmain(int argc, wchar_t **argv)
 {
     try
     {
+        bool reads_stdin = false;
+        for (int i = 2; i < argc; ++i)
+            reads_stdin |= std::wstring_view(argv[i]) == L"-";
+        if ((reads_stdin && _setmode(_fileno(stdin), _O_BINARY) == -1) ||
+            _setmode(_fileno(stdout), _O_BINARY) == -1)
+            throw std::runtime_error("cannot configure binary data streams");
         std::wstring_view mode = argc > 1 ? argv[1] : L"";
-        if (!((argc == 3 && (mode == L"apply" || mode == L"plan" || mode == L"validate" ||
-                             mode == L"checkpoint" || mode == L"restore")) ||
+        if (!((argc == 3 &&
+               (mode == L"apply" || mode == L"plan" || mode == L"validate" ||
+                mode == L"checkpoint" || mode == L"restore" || mode == L"canonicalize")) ||
               (argc == 4 && mode == L"reload")))
         {
             std::cerr << "NEONFORGE offline data\n  nf_data validate|plan|apply|checkpoint "
                          "<project.json>\n"
-                         "  nf_data restore <checkpoint.json>\n"
+                         "  nf_data restore|canonicalize <checkpoint.json or ->\n"
                          "  nf_data reload <checkpoint.json> <candidate-project.json>\n";
             return 2;
         }
         bool accepted = true;
-        auto source =
-            read_source(argv[2], (mode == L"restore" || mode == L"reload" ? 32u : 1u) * 1048576);
+        auto source = read_source(
+            argv[2],
+            (mode == L"restore" || mode == L"reload" || mode == L"canonicalize" ? 32u : 1u) *
+                1048576);
         nf::Json result;
-        if (mode == L"restore" || mode == L"reload")
+        if (mode == L"restore" || mode == L"reload" || mode == L"canonicalize")
         {
             nf::data::ProjectSession session;
             if (!session.restore(source))
@@ -53,6 +68,8 @@ int wmain(int argc, wchar_t **argv)
                                      {"error", nf::Json(std::string(session.error()))},
                                      {"state", session.snapshot().json()}});
             }
+            else if (mode == L"canonicalize")
+                result = session.checkpoint();
             else
                 result = session.snapshot().json();
         }
@@ -82,9 +99,14 @@ int wmain(int argc, wchar_t **argv)
         std::cerr << "NEONFORGE data: wrong JSON kind in project or schema\n";
         return 1;
     }
-    catch (const std::exception &e)
+    catch (const std::logic_error &e)
     {
         std::cerr << "NEONFORGE data: " << e.what() << '\n';
         return 1;
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "NEONFORGE data: " << e.what() << '\n';
+        return 3;
     }
 }

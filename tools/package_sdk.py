@@ -7,7 +7,7 @@ import struct
 import zipfile
 from pathlib import Path
 
-VERSION = '0.1.6-dev.1'
+VERSION = '0.1.7-dev.1'
 ROOT_FILES = {'.gitattributes', '.clang-format', '.gitignore', 'CMakeLists.txt', 'build.ps1', 'README.md', 'CHANGELOG.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CONTRIBUTING.md', 'SECURITY.md', '.github/CODEOWNERS', 'benchmarks/results/baseline.json', 'benchmarks/results/candidate.json'}
 DIRECTORIES = {
     'src': {'.cpp', '.hpp', '.h'},
@@ -165,7 +165,7 @@ def build_distributions(source, build, output):
             sdk[name] = data
         elif name.startswith(('examples/native/', 'examples/scripts/', 'examples/data/')):
             sdk[name] = data
-        elif name.startswith(('docs/', 'schemas/', 'adapters/', 'benchmarks/results/')) or name in {'tools/forge.py', 'tools/benchmark.py', 'tools/game_audit.py'}:
+        elif name.startswith(('docs/', 'schemas/', 'adapters/', 'benchmarks/results/')) or name in {'tools/forge.py', 'tools/benchmark.py', 'tools/game_audit.py', 'tools/data_store.py', 'tools/windows_files.py'}:
             sdk[name] = data
     sdk['README.md'] = f'''# NEONFORGE Core {VERSION} — standalone SDK
 
@@ -173,7 +173,7 @@ One foundation. Build Night City.
 
 This is a development SDK, not an installed Cyberpunk mod or a replacement for the six reference frameworks. Standalone Lua is available. Engine hooks, TweakDB, resources, the compiler and game UI remain unavailable. Do not copy this package over your game's loaders.
 
-Extract the complete directory and double-click Run-Demo.cmd. The original C and C++ plugins exchange a service, receive an event, execute a deferred task and persist their results under data/. No game installation is required. Windows x64 and the Microsoft Visual C++ x64 runtime are required; Python is needed only for tools/forge.py.
+Extract the complete directory and double-click Run-Demo.cmd. The original C and C++ plugins exchange a service, receive an event, execute a deferred task and persist their results under data/. No game installation is required. Windows x64 and the Microsoft Visual C++ x64 runtime are required; Python 3.10+ is needed for the developer tools, including data_store.py. Native runtime/data commands do not require Python.
 
 Run-Typed-Demo.cmd demonstrates signature lookup and typed native invocation from C, preserving its result under data/typed-demo/. See docs/typed-calls.md for ownership, limits and build instructions using lib/NeonForge.Core.lib.
 
