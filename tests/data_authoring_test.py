@@ -5,6 +5,8 @@ import json
 import subprocess
 import sys
 import tempfile
+import msvcrt
+import os
 
 binary = Path(sys.argv[1]).resolve() / 'nf_data.exe'
 with tempfile.TemporaryDirectory(prefix='nf-authoring-', dir=binary.parent) as temp:
@@ -87,4 +89,24 @@ with tempfile.TemporaryDirectory(prefix='nf-authoring-', dir=binary.parent) as t
     restored_large = run('restore', checkpoint)
     assert restored_large.returncode == 0, restored_large.stderr
     assert json.loads(restored_large.stdout) == json.loads(exported_large.stdout)['state']
+    streamed = subprocess.run([str(binary), 'canonicalize', '-'], input=exported_large.stdout,
+                              capture_output=True, text=True, encoding='utf-8', timeout=20)
+    assert streamed.returncode == 0, streamed.stderr
+    assert json.loads(streamed.stdout) == json.loads(exported_large.stdout)
+    streamed_project = subprocess.run([str(binary), 'checkpoint', '-'], input=original.decode('utf-8'),
+                                     capture_output=True, text=True, encoding='utf-8', timeout=20)
+    assert streamed_project.returncode == 0, streamed_project.stderr
+    assert json.loads(streamed_project.stdout) == saved
+    # A detached GUI launcher may supply stdout/stderr but no unused stdin.
+    output_path=root/'detached-output';error_path=root/'detached-error'
+    with output_path.open('wb') as out,error_path.open('wb') as err:
+        info=subprocess.STARTUPINFO()
+        info.dwFlags|=subprocess.STARTF_USESTDHANDLES
+        info.hStdInput=0
+        info.hStdOutput=msvcrt.get_osfhandle(out.fileno());info.hStdError=msvcrt.get_osfhandle(err.fileno())
+        handles=[info.hStdOutput,info.hStdError]
+        for handle in handles:os.set_handle_inheritable(handle,True)
+        info.lpAttributeList={'handle_list':handles}
+        detached=subprocess.run([str(binary),'validate',str(project)],startupinfo=info,close_fds=True,timeout=20)
+    assert detached.returncode==0,error_path.read_bytes()
 print('PASS inherited templates, exact checkpoint round trip, rejected imports and last-valid reload')

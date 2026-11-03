@@ -1,5 +1,13 @@
 # Changes
 
+## 0.1.7 development SDK
+
+- Owned Windows checkpoint store with hash-bound current/previous commit markers, two slots, exclusive OS handle locks and stale-generation rejection.
+- Flushed publication and real process-termination tests retain committed old/new snapshots without promoting prepared slots.
+- Content-settled polling reload, quiet repeated validation errors, retained-state I/O retries and competing-writer conflicts.
+- Checked local file handles, link/stream refusal, native bounded stdin/canonicalization and extracted-SDK workflows.
+- Native and typed ABI headers and GPLv3 preserved. Hardware power-loss behavior and game integration remain unqualified.
+
 ## 0.1.6 development SDK
 
 - Additive single-parent schema inheritance and reusable typed templates with explicit instance overrides, deterministic expansion and cycle/depth/size limits.
