@@ -138,6 +138,20 @@ class DistributionTests(unittest.TestCase):
         self.assertEqual(reload.returncode,0,reload.stderr)
         self.assertFalse(json.loads(reload.stdout)['changed'])
 
+    def test_extracted_sdk_durable_data_tool_has_its_native_validator(self):
+        result=package_sdk.build_distributions(SOURCE,BUILD,self.root/'dist')
+        with zipfile.ZipFile(self.root/'dist'/result['sdk']['name']) as archive:
+            archive.extractall(self.root/'extracted')
+        sdk=next((self.root/'extracted').iterdir())
+        tool=sdk/'tools/data_store.py';project=sdk/'examples/data/reusable-items.json';store=self.root/'owned-store'
+        self.assertTrue((sdk/'tools/windows_files.py').is_file())
+        saved=subprocess.run([sys.executable,str(tool),'save',str(project),str(store)],capture_output=True,text=True,encoding='utf-8',timeout=30)
+        self.assertEqual(saved.returncode,0,saved.stderr)
+        self.assertEqual(json.loads(saved.stdout)['generation'],'1')
+        loaded=subprocess.run([sys.executable,str(tool),'load',str(store)],capture_output=True,text=True,encoding='utf-8',timeout=30)
+        self.assertEqual(loaded.returncode,0,loaded.stderr)
+        self.assertEqual(json.loads(loaded.stdout)['state']['records']['Items.First']['fields']['id']['value'],'18446744073709551615')
+
     def test_extracted_sdk_audit_runs_without_modifying_fixture(self):
         result=package_sdk.build_distributions(SOURCE,BUILD,self.root/'dist')
         with zipfile.ZipFile(self.root/'dist'/result['sdk']['name']) as archive:

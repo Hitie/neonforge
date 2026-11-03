@@ -1,6 +1,6 @@
 # Capability and evidence status
 
-Development SDK 0.1.6. The full project remains unfinished.
+Development SDK 0.1.7. The full project remains unfinished.
 
 | Area | Current state |
 | --- | --- |
@@ -30,7 +30,7 @@ Every future capability must identify its implementation, negative/lifecycle tes
 
 ## Next integration gate
 
-Complete the [offline readiness plan](plans/2026-11-03-offline-readiness.md) before live integration. Read-only investigation of the user's fresh installation is authorized for identity, format and type research. Offline values/transactions, templates/inheritance, checkpoint import/export and caller-driven last-valid reload are implemented. File watching, durable checkpoint replacement/crash recovery, expanded native/Lua transport and engine adapters remain pending.
+Complete the [offline readiness plan](plans/2026-11-03-offline-readiness.md) before live integration. Read-only investigation of the user's fresh installation is authorized for identity, format and type research. Offline values/transactions, templates/inheritance, checkpoint import/export and caller-driven last-valid reload are implemented. The developer store now supplies polling file watching and tested process-interruption recovery. Hardware power-loss qualification, expanded native/Lua transport and engine adapters remain pending.
 
 After that offline gate, qualify a complete original bootstrap, demonstrate safe initialization timing and verify the first engine lifecycle/native call on an isolated candidate profile. Only then enable the corresponding adapter capability. The SDK candidate remains intended for standalone developer evaluation.
 
