@@ -31,7 +31,7 @@ Files: `src/data_authoring.cpp`, `src/data_model.hpp`, `src/data_model.cpp`, `sr
 
 Interfaces: `Json resolve_schemas(const Json&, Limits = {})`; `std::unique_ptr<Database> build_project(const Json&)`. Project `templates` maps names to `{extends?, type?, fields}`; `instantiate` operations name a template and optional field overrides. Resolved schemas feed both database validation and overwrite planning.
 
-- [ ] Write real tests for inherited required fields, no shadowing, forward references, cycles/depth, template chaining/override/type checks and independent instances. Observe RED.
+- [ ] Write real tests for inherited required fields, no shadowing, forward references, cycles/depth, template chaining/override/type checks and independent instances. confirm they fail first.
 - [ ] Implement bounded composition and run the native/CLI data suite to GREEN.
 
 ## Task 2: Validated checkpoints and reload
@@ -40,7 +40,7 @@ Files: `src/data_model.cpp`, `src/data_session.cpp`, header and tests.
 
 Interfaces: `Database::checkpoint()`, `Database::restore_checkpoint(const Json&)`; `ProjectSession::reload(std::string_view)`, `restore(std::string_view)`, `snapshot()`, `checkpoint()`, `generation()`, `error()`.
 
-- [ ] Write tests for exact checkpoint round trips, subsequent edits/stale transactions, invalid imports, state budgets, lifetime/thread behavior, failed parse/type reloads, equivalent reloads and schema-only changes. Observe RED.
+- [ ] Write tests for exact checkpoint round trips, subsequent edits/stale transactions, invalid imports, state budgets, lifetime/thread behavior, failed parse/type reloads, equivalent reloads and schema-only changes. confirm they fail first.
 - [ ] Validate entire checkpoint before publishing; reuse state budget checks; preserve previous session on all candidate errors. Run focused suite to GREEN.
 
 ## Task 3: SDK authoring workflow and publication
