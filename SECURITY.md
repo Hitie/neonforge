@@ -12,7 +12,7 @@ Include the affected commit, reproduction steps, expected impact and a small ori
 
 ## Trust boundaries
 
-Native plugins execute with the host user's permissions. Capabilities and API ownership checks are coordination mechanisms, not a native-code sandbox. Install only plugins you trust. In-process access violations cannot be reliably recovered from.
+Native plugins execute with the host user's permissions. Capabilities and API ownership checks are coordination mechanisms, not a native-code sandbox. Install only plugins you trust. In-process access violations cannot be reliably recovered from. The host restricts later DLL searches to the application directory and Windows system directory, so a plugin that loads a helper DLL by name should pass its full path.
 
 The installer rejects unsafe paths, links and conflicting ownership and rolls back ordinary handled I/O failures. It does not promise protection against an attacker racing filesystem changes or complete recovery after abrupt process termination. See the tool documentation before using development packages.
 

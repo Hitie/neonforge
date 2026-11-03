@@ -16,11 +16,12 @@ $sdkBin=Join-Path $sdkRoot ('bin\'+$sdkVersion+'\x64')
 $env:PATH=$bin+';'+$sdkBin+';'+$env:PATH
 $env:INCLUDE=(Join-Path $toolRoot.FullName 'include')+';'+(Join-Path $sdkRoot ('Include\'+$sdkVersion+'\ucrt'))+';'+(Join-Path $sdkRoot ('Include\'+$sdkVersion+'\shared'))+';'+(Join-Path $sdkRoot ('Include\'+$sdkVersion+'\um'))
 $env:LIB=(Join-Path $toolRoot.FullName 'lib\x64')+';'+(Join-Path $sdkRoot ('Lib\'+$sdkVersion+'\ucrt\x64'))+';'+(Join-Path $sdkRoot ('Lib\'+$sdkVersion+'\um\x64'))
+$env:LINK='/guard:cf /CETCOMPAT'
 $dest=Join-Path $PSScriptRoot $BuildDir
 New-Item -ItemType Directory -Path $dest -Force | Out-Null
 Push-Location $dest
 try {
-  $common=@('/nologo','/std:c++20','/EHsc','/W4','/permissive-','/utf-8','/MD','/O2',('/I'+$PSScriptRoot+'\src'),('/I'+$PSScriptRoot+'\include'),('/I'+$PSScriptRoot+'\third_party\lua'))
+  $common=@('/nologo','/std:c++20','/EHsc','/W4','/permissive-','/utf-8','/MD','/O2','/guard:cf',('/I'+$PSScriptRoot+'\src'),('/I'+$PSScriptRoot+'\include'),('/I'+$PSScriptRoot+'\third_party\lua'))
   $ccommon=@($common | Where-Object { $_ -ne '/std:c++20' })
   & $pythonExe @pythonArgs ($PSScriptRoot+'\tools\verify_dependencies.py')
   if($LASTEXITCODE){exit $LASTEXITCODE}
