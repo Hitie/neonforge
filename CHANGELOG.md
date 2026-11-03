@@ -1,5 +1,12 @@
 # Changes
 
+## 0.1.6 development SDK
+
+- Additive single-parent schema inheritance and reusable typed templates with explicit instance overrides, deterministic expansion and cycle/depth/size limits.
+- Validated offline checkpoint export/import preserves schemas, values, revisions and provenance; invalid restoration cannot alter the live database.
+- Caller-driven last-valid project reload retains snapshots on errors, ignores equivalent candidates and tracks schema-only changes through session generations.
+- SDK checkpoint/restore/reload commands, original reusable-item example and extracted-package round-trip tests.
+- Primitive ABI headers and GPLv3 preserved. File watching, durable file replacement/crash recovery, expanded transport and game integration remain pending.
 ## 0.1.5 development SDK
 
 - Original native offline data engine with exact 64-bit integers, symbolic types, vectors, quaternions, colors and homogeneous arrays.

@@ -119,6 +119,25 @@ class DistributionTests(unittest.TestCase):
         overwrites=json.loads(preview.stdout)['transactions'][2]['overwrites']
         self.assertEqual(overwrites,[dict(record='Items.Custom',field='damage',previous_owner='org.neonforge.data.custom',owner='org.neonforge.data.balance',action='set')])
 
+    def test_extracted_sdk_reusable_template_checkpoint_round_trip(self):
+        result=package_sdk.build_distributions(SOURCE,BUILD,self.root/'dist')
+        with zipfile.ZipFile(self.root/'dist'/result['sdk']['name']) as archive:
+            archive.extractall(self.root/'extracted')
+        sdk=next((self.root/'extracted').iterdir())
+        binary=sdk/'runtime/nf_data.exe'
+        project=sdk/'examples/data/reusable-items.json'
+        run=subprocess.run([str(binary),'checkpoint',str(project)],capture_output=True,text=True,timeout=30)
+        self.assertEqual(run.returncode,0,run.stderr)
+        checkpoint=json.loads(run.stdout)
+        self.assertEqual(checkpoint['state']['records']['Items.Second']['fields']['id']['value'],'18446744073709551615')
+        saved=self.root/'checkpoint.json';saved.write_text(run.stdout,encoding='utf-8')
+        restore=subprocess.run([str(binary),'restore',str(saved)],capture_output=True,text=True,timeout=30)
+        self.assertEqual(restore.returncode,0,restore.stderr)
+        self.assertEqual(json.loads(restore.stdout),checkpoint['state'])
+        reload=subprocess.run([str(binary),'reload',str(saved),str(project)],capture_output=True,text=True,timeout=30)
+        self.assertEqual(reload.returncode,0,reload.stderr)
+        self.assertFalse(json.loads(reload.stdout)['changed'])
+
     def test_extracted_sdk_audit_runs_without_modifying_fixture(self):
         result=package_sdk.build_distributions(SOURCE,BUILD,self.root/'dist')
         with zipfile.ZipFile(self.root/'dist'/result['sdk']['name']) as archive:

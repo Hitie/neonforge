@@ -28,6 +28,8 @@ Script tests exercise per-mod isolation, quotas through protected module calls, 
 
 Data tests verify full-width integers, compound/array domains, immutable snapshots, failed/stale batches, clone independence, provenance and retained-data budgets, moved-from handles and thread/lifetime checks. CLI and extracted-SDK tests run the actual original patch project and verify deterministic plans and diagnostics.
 
+Authoring tests exercise additive schema inheritance, typed reusable templates, unused-definition validation, graph depth/cycle/fanout limits, checkpoint corruption rejection and exact round trips. Sessions preserve the last valid database on parse/type/import failures, detect schema-only changes and retain old snapshots; the extracted SDK executes checkpoint/restore/reload using the reusable-item example. These are caller-driven offline sessions, without file watching or durable file replacement.
+
 These tests establish standalone behavior only. They do not establish engine reflection, resource loading, script compiler correctness, live reload of native modules, game performance or compatibility with other mod loaders.
 
 ## Review changes

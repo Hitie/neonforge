@@ -20,7 +20,13 @@ struct PlanBudget
         bytes += size;
     }
 };
-void apply_operation_impl(Transaction &tx, const Json &operation)
+struct Template
+{
+    std::string type;
+    std::map<std::string, Value, std::less<>> values;
+};
+using Templates = std::map<std::string, Template, std::less<>>;
+void apply_operation_impl(Transaction &tx, const Json &operation, const Templates &templates)
 {
     const auto &op = operation.at("op").string();
     const auto &record = operation.at("record").string();
@@ -28,6 +34,21 @@ void apply_operation_impl(Transaction &tx, const Json &operation)
     {
         fields(operation, {"op", "record", "type"});
         tx.create(record, operation.at("type").string());
+    }
+    else if (op == "instantiate")
+    {
+        fields(operation, {"op", "record", "template", "fields"});
+        const auto &definition = templates.at(operation.at("template").string());
+        auto values = definition.values;
+        if (auto overrides = operation.find("fields"))
+        {
+            require(overrides->object().size() <= 256, "instance field limit");
+            for (const auto &[key, value] : overrides->object())
+                values.insert_or_assign(key, Value::parse(value));
+        }
+        tx.create(record, definition.type);
+        for (const auto &[key, value] : values)
+            tx.set(record, key, value);
     }
     else if (op == "clone")
     {
@@ -66,7 +87,7 @@ void apply_operation_impl(Transaction &tx, const Json &operation)
     else
         throw std::invalid_argument("unknown data operation: " + op);
 }
-void apply_operation(Transaction &tx, const Json &operation)
+void apply_operation(Transaction &tx, const Json &operation, const Templates &templates)
 {
     std::string label = "data operation";
     try
@@ -80,7 +101,7 @@ void apply_operation(Transaction &tx, const Json &operation)
         if (auto value = operation.find("op"))
             if (auto name = std::get_if<std::string>(&value->value))
                 label += " (" + *name + ")";
-        apply_operation_impl(tx, operation);
+        apply_operation_impl(tx, operation, templates);
     }
     catch (const std::bad_variant_access &)
     {
@@ -151,12 +172,23 @@ Json overwrite_report(const Snapshot &before, const Snapshot &after, const Json 
     return Json(result);
 }
 } // namespace
-Json apply_project(const Json &project, bool plan)
+static std::unique_ptr<Database> execute_project(const Json &project, bool plan, Json *output)
 {
-    fields(project, {"format", "schemas", "transactions"});
+    fields(project, {"format", "schemas", "templates", "transactions"});
     require(exact_small_integer(project.at("format"), 1), "unsupported data project format");
-    const auto &schemas = project.at("schemas");
-    Database database(schemas);
+    auto schemas = resolve_schemas(project.at("schemas"));
+    auto definitions = resolve_templates(
+        project.find("templates") ? project.at("templates") : Json(Json::Object{}), schemas);
+    Templates templates;
+    for (const auto &[name, definition] : definitions.object())
+    {
+        Template entry{definition.at("type").string(), {}};
+        for (const auto &[key, value] : definition.at("fields").object())
+            entry.values.emplace(key, Value::parse(value));
+        templates.emplace(name, std::move(entry));
+    }
+    auto owned = std::make_unique<Database>(schemas);
+    auto &database = *owned;
     Json::Array batches;
     PlanBudget budget;
     require(project.at("transactions").array().size() <= 4096, "data transaction count limit");
@@ -176,7 +208,7 @@ Json apply_project(const Json &project, bool plan)
             }
             auto tx = database.begin(owner, source);
             for (const auto &operation : batch.at("operations").array())
-                apply_operation(tx, operation);
+                apply_operation(tx, operation, templates);
             auto revision = tx.commit();
             auto after = database.snapshot();
             if (plan)
@@ -201,12 +233,24 @@ Json apply_project(const Json &project, bool plan)
         }
     }
     if (plan)
-        return Json(Json::Object{{"format", Json(1.0)},
-                                 {"mode", string("offline-plan")},
-                                 {"transactions", Json(std::move(batches))},
-                                 {"revision", number(database.snapshot().revision())},
-                                 {"engine_adapter_ready", Json(false)},
-                                 {"game_tested", Json(false)}});
-    return database.snapshot().json();
+        *output = Json(Json::Object{{"format", Json(1.0)},
+                                    {"mode", string("offline-plan")},
+                                    {"transactions", Json(std::move(batches))},
+                                    {"revision", number(database.snapshot().revision())},
+                                    {"engine_adapter_ready", Json(false)},
+                                    {"game_tested", Json(false)}});
+    else if (output)
+        *output = database.snapshot().json();
+    return owned;
+}
+std::unique_ptr<Database> build_project(const Json &project)
+{
+    return execute_project(project, false, nullptr);
+}
+Json apply_project(const Json &project, bool plan)
+{
+    Json output;
+    (void)execute_project(project, plan, &output);
+    return output;
 }
 } // namespace nf::data

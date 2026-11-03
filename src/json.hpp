@@ -37,5 +37,6 @@ struct ParseError : std::runtime_error
 bool valid_utf8(std::string_view text);
 Json parse_json(std::string_view text);
 Json parse_json_exact(std::string_view text);
+Json parse_json_exact_limited(std::string_view text, size_t byte_limit, size_t node_limit);
 std::string to_json(const Json &value);
 } // namespace nf

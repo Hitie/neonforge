@@ -1,0 +1,25 @@
+{
+  "format": 1,
+  "schemas": {
+    "Identity": {"fields": {"id": {"type": "u64", "required": true}}},
+    "OriginalItem": {"extends": "Identity", "fields": {
+      "title": {"type": "string", "required": true},
+      "tags": {"type": "array", "element": {"type": "name"}}
+    }}
+  },
+  "templates": {
+    "Base": {"type": "OriginalItem", "fields": {
+      "id": {"type": "u64", "value": "18446744073709551615"},
+      "title": {"type": "string", "value": "Original template"}
+    }},
+    "Tagged": {"extends": "Base", "fields": {
+      "tags": {"type": "array", "element": {"type": "name"}, "value": [{"type": "name", "value": "Original"}]}
+    }}
+  },
+  "transactions": [{"owner": "org.neonforge.templates", "source": "original offline authoring example", "operations": [
+    {"op": "instantiate", "record": "Items.First", "template": "Tagged"},
+    {"op": "instantiate", "record": "Items.Second", "template": "Tagged", "fields": {
+      "title": {"type": "string", "value": "Independent instance"}
+    }}
+  ]}]
+}
