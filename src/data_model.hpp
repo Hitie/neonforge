@@ -102,6 +102,31 @@ class Database
     Database &operator=(const Database &) = delete;
     Snapshot snapshot() const;
     Transaction begin(std::string owner, std::string source = {});
+    Json checkpoint() const;
+    void restore_checkpoint(const Json &);
 };
+class ProjectSession
+{
+    std::thread::id thread_ = std::this_thread::get_id();
+    std::unique_ptr<Database> database_;
+    uint64_t generation_ = 0;
+    std::string error_;
+    void check() const;
+    bool replace(std::string_view, bool checkpoint);
+
+  public:
+    ProjectSession();
+    ProjectSession(const ProjectSession &) = delete;
+    ProjectSession &operator=(const ProjectSession &) = delete;
+    bool reload(std::string_view);
+    bool restore(std::string_view);
+    Snapshot snapshot() const;
+    Json checkpoint() const;
+    uint64_t generation() const;
+    std::string_view error() const;
+};
+Json resolve_schemas(const Json &, Limits = {});
+Json resolve_templates(const Json &, const Json &schemas);
+std::unique_ptr<Database> build_project(const Json &);
 Json apply_project(const Json &, bool plan = false);
 } // namespace nf::data

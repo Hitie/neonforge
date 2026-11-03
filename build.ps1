@@ -35,11 +35,11 @@ try {
   if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @common ($PSScriptRoot+'\src\json.cpp') ($PSScriptRoot+'\src\manifest.cpp') ($PSScriptRoot+'\tests\package_tests.cpp') '/Fe:nf_package_tests.exe'
   if($LASTEXITCODE){exit $LASTEXITCODE}
-  & ($bin+'\cl.exe') @common '/c' ($PSScriptRoot+'\src\data_values.cpp') ($PSScriptRoot+'\src\data_model.cpp') ($PSScriptRoot+'\src\data_project.cpp')
+  & ($bin+'\cl.exe') @common '/c' ($PSScriptRoot+'\src\data_values.cpp') ($PSScriptRoot+'\src\data_model.cpp') ($PSScriptRoot+'\src\data_project.cpp') ($PSScriptRoot+'\src\data_authoring.cpp') ($PSScriptRoot+'\src\data_session.cpp')
   if($LASTEXITCODE){exit $LASTEXITCODE}
-  & ($bin+'\cl.exe') @common ($PSScriptRoot+'\tests\data_tests.cpp') 'data_values.obj' 'data_model.obj' 'data_project.obj' 'json.obj' 'manifest.obj' '/Fe:nf_data_tests.exe'
+  & ($bin+'\cl.exe') @common ($PSScriptRoot+'\tests\data_tests.cpp') 'data_values.obj' 'data_model.obj' 'data_project.obj' 'data_authoring.obj' 'data_session.obj' 'json.obj' 'manifest.obj' '/Fe:nf_data_tests.exe'
   if($LASTEXITCODE){exit $LASTEXITCODE}
-  & ($bin+'\cl.exe') @common ($PSScriptRoot+'\src\data_cli.cpp') 'data_values.obj' 'data_model.obj' 'data_project.obj' 'json.obj' 'manifest.obj' '/Fe:nf_data.exe'
+  & ($bin+'\cl.exe') @common ($PSScriptRoot+'\src\data_cli.cpp') 'data_values.obj' 'data_model.obj' 'data_project.obj' 'data_authoring.obj' 'data_session.obj' 'json.obj' 'manifest.obj' '/Fe:nf_data.exe'
   if($LASTEXITCODE){exit $LASTEXITCODE}
   & ($bin+'\cl.exe') @common '/LD' ($PSScriptRoot+'\src\exports.cpp') ($PSScriptRoot+'\src\kernel.cpp') ($PSScriptRoot+'\src\json.cpp') ($PSScriptRoot+'\src\manifest.cpp') '/Fe:NeonForge.Core.dll'
   if($LASTEXITCODE){exit $LASTEXITCODE}
@@ -82,6 +82,7 @@ try {
     & .\nf_package_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_data_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\data_cli_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
+    & $pythonExe @pythonArgs ($PSScriptRoot+'\tests\data_authoring_test.py') $dest;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_kernel_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_script_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}
     & .\nf_typed_tests.exe;if($LASTEXITCODE){exit $LASTEXITCODE}

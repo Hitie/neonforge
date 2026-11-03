@@ -1,6 +1,7 @@
 #include "data_internal.hpp"
 #include "manifest.hpp"
 #include <atomic>
+#include <charconv>
 #include <limits>
 #include <mutex>
 
@@ -38,6 +39,7 @@ struct Control
 {
     std::thread::id thread = std::this_thread::get_id();
     Limits limits;
+    Json schema_json;
     std::map<std::string, Schema, std::less<>> schemas;
     std::shared_ptr<const State> state = std::make_shared<const State>();
     void check() const
@@ -45,11 +47,69 @@ struct Control
         require(thread == std::this_thread::get_id(), "database requires its creating thread");
     }
 };
+struct CheckpointNodes
+{
+    size_t remaining = 262144;
+    void consume(size_t count)
+    {
+        require(count <= remaining, "data checkpoint node limit");
+        remaining -= count;
+    }
+    void json(const Json &input, size_t depth = 0)
+    {
+        require(depth <= 64, "data checkpoint JSON depth limit");
+        consume(1);
+        if (auto array = std::get_if<Json::Array>(&input.value))
+            for (const auto &value : *array)
+                json(value, depth + 1);
+        if (auto object = std::get_if<Json::Object>(&input.value))
+            for (const auto &[key, value] : *object)
+            {
+                (void)key;
+                json(value, depth + 1);
+            }
+    }
+};
 const Record &record(const State &state, std::string_view name)
 {
     auto found = state.records.find(name);
     require(found != state.records.end(), "missing data record: " + std::string(name));
     return *found->second;
+}
+void validate_state(const Control &c, const State &state)
+{
+    require(state.records.size() <= c.limits.records, "data record budget");
+    size_t bytes = 0;
+    auto account = [&](size_t size)
+    {
+        require(size <= c.limits.bytes - bytes, "data retained byte budget");
+        bytes += size;
+    };
+    account(state.owner.size());
+    account(state.source.size());
+    for (const auto &name : state.changed)
+        account(name.size());
+    for (const auto &[name, entry] : state.records)
+    {
+        account(name.size());
+        account(entry->type.size());
+        require(entry->fields.size() <= c.limits.fields_per_record, "data field budget: " + name);
+        for (const auto &[key, rule] : c.schemas.at(entry->type).fields)
+            require(!rule.required || entry->fields.contains(key),
+                    "required field missing: " + name + "." + key);
+        for (const auto &[key, field] : entry->fields)
+        {
+            account(key.size());
+            account(field.value.encoded().size());
+            for (const auto &edit : field.history)
+            {
+                account(edit.owner.size());
+                account(edit.source.size());
+                account(edit.operation.size());
+                account(sizeof(edit.sequence));
+            }
+        }
+    }
 }
 } // namespace detail
 using namespace detail;
@@ -364,39 +424,7 @@ uint64_t Transaction::commit()
             live().base.reset();
             return c->state->revision;
         }
-        require(live().working->records.size() <= c->limits.records, "data record budget");
-        size_t bytes = 0;
-        auto account = [&](size_t size)
-        {
-            require(size <= c->limits.bytes - bytes, "data retained byte budget");
-            bytes += size;
-        };
-        account(live().working->owner.size());
-        account(live().working->source.size());
-        for (const auto &name : live().working->changed)
-            account(name.size());
-        for (const auto &[name, entry] : live().working->records)
-        {
-            account(name.size());
-            account(entry->type.size());
-            require(entry->fields.size() <= c->limits.fields_per_record,
-                    "data field budget: " + name);
-            for (const auto &[key, rule] : c->schemas.at(entry->type).fields)
-                require(!rule.required || entry->fields.contains(key),
-                        "required field missing: " + name + "." + key);
-            for (const auto &[key, field] : entry->fields)
-            {
-                account(key.size());
-                account(field.value.encoded().size());
-                for (const auto &edit : field.history)
-                {
-                    account(edit.owner.size());
-                    account(edit.source.size());
-                    account(edit.operation.size());
-                    account(sizeof(edit.sequence));
-                }
-            }
-        }
+        validate_state(*c, *live().working);
         if (live().dirty)
         {
             require(live().base->revision != UINT64_MAX, "data revision exhausted");
@@ -439,7 +467,9 @@ Database::Database(const Json &schemas, Limits limits) : control_(std::make_shar
             "invalid data limits");
     control_->limits = limits;
     require(schemas.object().size() <= 4096, "data schema count limit");
-    for (const auto &[name, definition] : schemas.object())
+    auto resolved = resolve_schemas(schemas, limits);
+    control_->schema_json = resolved;
+    for (const auto &[name, definition] : resolved.object())
     {
         identifier(name);
         fields(definition, {"fields"});
@@ -481,5 +511,167 @@ Transaction Database::begin(std::string owner, std::string source)
     impl->owner = std::move(owner);
     impl->source = std::move(source);
     return Transaction(std::move(impl));
+}
+Json Database::checkpoint() const
+{
+    control_->check();
+    // Count existing immutable values before materializing an expanded JSON tree.
+    // The count matches the wire envelope, including history/metadata objects.
+    CheckpointNodes nodes;
+    nodes.consume(13 + control_->state->changed.size());
+    nodes.json(control_->schema_json);
+    for (const auto &[name, entry] : control_->state->records)
+    {
+        (void)name;
+        nodes.consume(4);
+        for (const auto &[key, field] : entry->fields)
+        {
+            (void)key;
+            nodes.json(field.value.json());
+            nodes.consume(1 + 5 * field.history.size());
+        }
+    }
+    Json output(Json::Object{{"format", Json(1.0)},
+                             {"kind", string("neonforge.offline-data-checkpoint")},
+                             {"schemas", control_->schema_json},
+                             {"state", snapshot().json()}});
+    require(to_json(output).size() <= 32 * 1048576, "data checkpoint byte limit");
+    return output;
+}
+void Database::restore_checkpoint(const Json &input)
+{
+    control_->check();
+    // All input is untrusted; publish only after structural, type and budget checks.
+    fields(input, {"format", "kind", "schemas", "state"});
+    CheckpointNodes{}.json(input);
+    require(exact_small_integer(input.at("format"), 1) &&
+                input.at("kind").string() == "neonforge.offline-data-checkpoint",
+            "unsupported data checkpoint format");
+    require(to_json(input).size() <= 32 * 1048576, "data checkpoint byte limit");
+    require(to_json(resolve_schemas(input.at("schemas"), control_->limits)) ==
+                to_json(control_->schema_json),
+            "checkpoint schemas do not match database");
+    auto counter = [](const Json &encoded)
+    {
+        auto value = Value::parse(Json(Json::Object{{"type", string("u64")}, {"value", encoded}}));
+        uint64_t result = 0;
+        const auto &source = value.json().at("value").string();
+        auto parsed = std::from_chars(source.data(), source.data() + source.size(), result);
+        require(parsed.ec == std::errc{} && parsed.ptr == source.data() + source.size(),
+                "invalid checkpoint counter");
+        return result;
+    };
+    auto owner = [](const std::string &name)
+    { require(name.size() <= 128 && valid_id(name), "invalid checkpoint owner"); };
+    const auto &encoded = input.at("state");
+    fields(encoded,
+           {"format", "revision", "records", "commit", "engine_adapter_ready", "game_tested"});
+    require(exact_small_integer(encoded.at("format"), 1) &&
+                !encoded.at("engine_adapter_ready").boolean() &&
+                !encoded.at("game_tested").boolean(),
+            "unsupported checkpoint state flags or format");
+    auto candidate = std::make_shared<State>();
+    candidate->revision = counter(encoded.at("revision"));
+    const auto &commit = encoded.at("commit");
+    fields(commit, {"owner", "source", "changed_records"});
+    candidate->owner = commit.at("owner").string();
+    candidate->source = commit.at("source").string();
+    text(candidate->source, 240);
+    if (candidate->revision)
+        owner(candidate->owner);
+    else
+        require(candidate->owner.empty() && candidate->source.empty(),
+                "invalid initial checkpoint metadata");
+    require(commit.at("changed_records").array().size() <= 16384,
+            "checkpoint changed-record limit");
+    for (const auto &name : commit.at("changed_records").array())
+    {
+        identifier(name.string(), 256);
+        require(candidate->changed.insert(name.string()).second,
+                "duplicate checkpoint changed record");
+    }
+    require(candidate->revision ? !candidate->changed.empty() : candidate->changed.empty(),
+            "invalid checkpoint commit metadata");
+    require(encoded.at("records").object().size() <= control_->limits.records,
+            "data record budget");
+    require(candidate->revision || encoded.at("records").object().empty(),
+            "initial checkpoint has records");
+    for (const auto &[name, record_json] : encoded.at("records").object())
+    {
+        identifier(name, 256);
+        fields(record_json, {"type", "fields", "provenance"});
+        auto entry = std::make_shared<Record>();
+        entry->type = record_json.at("type").string();
+        identifier(entry->type);
+        auto schema = control_->schemas.find(entry->type);
+        require(schema != control_->schemas.end(),
+                "unknown checkpoint record schema: " + entry->type);
+        const auto &values = record_json.at("fields").object();
+        const auto &histories = record_json.at("provenance").object();
+        require(values.size() <= control_->limits.fields_per_record &&
+                    values.size() == histories.size(),
+                "checkpoint field/provenance shape mismatch");
+        for (const auto &[key, value_json] : values)
+        {
+            identifier(key);
+            auto rule = schema->second.fields.find(key);
+            require(rule != schema->second.fields.end(),
+                    "unknown checkpoint field: " + name + "." + key);
+            auto value = Value::parse(value_json);
+            require(rule->second.type == value.type(),
+                    "checkpoint field type mismatch: " + name + "." + key);
+            auto history = histories.find(key);
+            require(history != histories.end(),
+                    "missing checkpoint provenance: " + name + "." + key);
+            require(!history->second.array().empty() &&
+                        history->second.array().size() <= control_->limits.history,
+                    "checkpoint provenance limit");
+            std::vector<Edit> edits;
+            for (const auto &edit_json : history->second.array())
+            {
+                fields(edit_json, {"owner", "source", "operation", "sequence"});
+                Edit edit{edit_json.at("owner").string(), edit_json.at("source").string(),
+                          edit_json.at("operation").string(), counter(edit_json.at("sequence"))};
+                owner(edit.owner);
+                text(edit.source, 240);
+                require(edit.operation == "set" || edit.operation == "clone" ||
+                            edit.operation == "append" || edit.operation == "prepend" ||
+                            edit.operation == "remove",
+                        "invalid checkpoint edit operation");
+                require(edit.sequence > 0 && edit.sequence <= 16384,
+                        "invalid checkpoint edit sequence");
+                require(!edits.empty() || edit.operation == "set",
+                        "checkpoint field history must begin with set");
+                require((edit.operation != "append" && edit.operation != "prepend" &&
+                         edit.operation != "remove") ||
+                            value.type().kind() == "array",
+                        "checkpoint array operation on scalar field");
+                if (candidate->revision == 1)
+                {
+                    require(edit.owner == candidate->owner && edit.source == candidate->source,
+                            "first-revision checkpoint attribution mismatch");
+                    require(edits.empty() || edits.back().sequence < edit.sequence,
+                            "first-revision checkpoint sequence order");
+                }
+                edits.push_back(std::move(edit));
+            }
+            entry->fields.emplace(key, Field{std::move(value), std::move(edits)});
+        }
+        candidate->records.emplace(name, std::move(entry));
+    }
+    if (candidate->revision == 1)
+    {
+        require(candidate->changed.size() == candidate->records.size(),
+                "first-revision checkpoint changed-record mismatch");
+        for (const auto &[name, entry] : candidate->records)
+        {
+            (void)entry;
+            require(candidate->changed.contains(name),
+                    "first-revision checkpoint missing changed record");
+        }
+    }
+    validate_state(*control_, *candidate);
+    // A new state identity also invalidates transactions begun before a restore.
+    control_->state = std::move(candidate);
 }
 } // namespace nf::data

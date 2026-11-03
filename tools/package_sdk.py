@@ -7,7 +7,7 @@ import struct
 import zipfile
 from pathlib import Path
 
-VERSION = '0.1.5-dev.1'
+VERSION = '0.1.6-dev.1'
 ROOT_FILES = {'.gitattributes', '.clang-format', '.gitignore', 'CMakeLists.txt', 'build.ps1', 'README.md', 'CHANGELOG.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CONTRIBUTING.md', 'SECURITY.md', '.github/CODEOWNERS', 'benchmarks/results/baseline.json', 'benchmarks/results/candidate.json'}
 DIRECTORIES = {
     'src': {'.cpp', '.hpp', '.h'},

@@ -1,6 +1,6 @@
 # Native SDK contracts
 
-The header `include/neonforge/api.h` is usable from C and C++. The target is Windows x64. API major remains 1; runtime version is 0.1.5. The existing table layout and contracts are preserved. The separately negotiated [typed API](typed-calls.md) adds primitive values and standalone function reflection.
+The header `include/neonforge/api.h` is usable from C and C++. The target is Windows x64. API major remains 1; runtime version is 0.1.6. The existing table layout and contracts are preserved. The separately negotiated [typed API](typed-calls.md) adds primitive values and standalone function reflection.
 
 ## Negotiation
 
