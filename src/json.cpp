@@ -75,6 +75,7 @@ struct Parser
     std::string_view s;
     size_t p = 0;
     bool exact_numbers = false;
+    size_t nodes = 0, node_limit = SIZE_MAX;
     [[noreturn]] void fail(std::string why) const { throw ParseError(p, std::move(why)); }
     void ws()
     {
@@ -208,6 +209,8 @@ struct Parser
     }
     Json value(unsigned depth)
     {
+        if (++nodes > node_limit)
+            fail("JSON node limit");
         if (depth > 64)
             fail("JSON nesting exceeds 64");
         ws();
@@ -385,14 +388,16 @@ void serialize(std::string &out, const Json &j, unsigned depth)
         j.value);
 }
 } // namespace
-Json parse_with_numbers(std::string_view text, bool exact)
+Json parse_with_numbers(std::string_view text, bool exact, size_t byte_limit = 1048576,
+                        size_t node_limit = SIZE_MAX)
 {
-    if (text.size() > 1048576)
-        throw ParseError(0, "JSON exceeds 1 MiB");
+    if (text.size() > byte_limit)
+        throw ParseError(0, byte_limit == 1048576 ? "JSON exceeds 1 MiB" : "JSON input byte limit");
     if (!valid_utf8(text))
         throw ParseError(0, "invalid UTF-8");
     Parser p{text};
     p.exact_numbers = exact;
+    p.node_limit = node_limit;
     auto out = p.value(0);
     p.ws();
     if (p.p != text.size())
@@ -401,6 +406,12 @@ Json parse_with_numbers(std::string_view text, bool exact)
 }
 Json parse_json(std::string_view text) { return parse_with_numbers(text, false); }
 Json parse_json_exact(std::string_view text) { return parse_with_numbers(text, true); }
+Json parse_json_exact_limited(std::string_view text, size_t byte_limit, size_t node_limit)
+{
+    if (!byte_limit || byte_limit > 32 * 1048576 || !node_limit || node_limit > 1048576)
+        throw std::invalid_argument("invalid JSON parser limits");
+    return parse_with_numbers(text, true, byte_limit, node_limit);
+}
 std::string to_json(const Json &j)
 {
     std::string out;
